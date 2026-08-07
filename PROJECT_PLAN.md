@@ -33,7 +33,7 @@
 
 第二版 v2 的目標是在第一版骨架與部署流程上，完成具備 PostgreSQL、Prisma、帳號驗證、個人紀錄 CRUD、使用者資料隔離、輸入驗證、錯誤處理、操作紀錄及測試的 MVP。
 
-狀態：**尚未開始**。
+狀態：**開發中**。v2 第 0 階段已完成，v2 第 1 階段尚未開始。
 
 第二版必須依階段執行；尚未決定的技術事項需先完成決策與記錄，不在計畫階段擅自選定。
 
@@ -86,20 +86,92 @@
 | 樣式 | Tailwind CSS | 可快速建立簡潔一致的介面，不需額外 UI 元件庫。 |
 | 資料庫 | PostgreSQL | 主流關聯式資料庫，適合使用者、資料擁有權與稽核紀錄。 |
 | ORM | Prisma ORM 穩定版 | Schema、Migration 與型別安全查詢較容易學習；不採用 Early Access 版本。 |
-| 身分驗證 | 待決策 | 第二版實作前再比較可用方案；目前不指定 Auth.js 或其他方案。 |
-| Session 策略 | 待決策 | 第二版帳號驗證階段再決定 Session 的儲存方式與生命週期。 |
-| 密碼雜湊方案 | 待決策 | 第二版帳號驗證階段再選擇可靠演算法、函式庫與參數。 |
-| 欄位驗證函式庫 | 待決策 | 第二版驗證階段再評估 Zod 或其他方案，不提前安裝。 |
-| 後端操作方式 | 待決策 | 第二版實作前再決定 Server Actions、Route Handlers 或兩者的責任分工。 |
-| 測試框架 | 待決策 | 第二版測試階段前再決定單元、整合與端對端測試工具。 |
+| 身分驗證 | Better Auth | 第二版只實作 Email／Password 註冊、登入與登出，不做 OAuth、Email 驗證、忘記密碼或 2FA。 |
+| Session 策略 | 資料庫 Session | 所有受保護頁面與資料操作都在伺服器端驗證 Session，不能只因 Cookie 存在就視為已登入。 |
+| 密碼雜湊方案 | Better Auth 預設方案 | 不自行實作 SHA-256、bcrypt、Argon2id 或第二層雜湊，資料庫不得保存明文密碼。 |
+| 欄位驗證函式庫 | Zod 穩定版 | 伺服器端 Zod 驗證是資料進入業務邏輯與資料庫前的必要檢查。 |
+| 後端操作方式 | Server Components、Server Actions、Route Handlers 分工 | 讀取、網站內部異動及必要 HTTP API 各自使用對應機制，不重複建立 `/api/records` CRUD。 |
+| 測試框架 | Vitest 與 Playwright | v2 第 8 階段使用 Vitest 測試 Zod Schema 與純邏輯，使用 Playwright 測試主要使用者流程與越權情境。 |
 | 套件管理 | npm | Node.js 隨附、文件普遍，適合初學者。 |
 | 部署 | Vercel（第一版已採用） | 已完成 GitHub 整合、Production Deployment 與公開網址 smoke test。 |
-| 本機 PostgreSQL 開發方式 | 待決策 | 第二版資料庫階段開始前決定，不提前建立環境。 |
-| 雲端資料庫供應商 | 待決策 | Neon PostgreSQL、Prisma Postgres 或其他供應商僅為候選，第二版部署前再評估。 |
+| 本機 PostgreSQL 開發方式 | Windows 本機直接安裝 | 開發期間使用本機 PostgreSQL，搭配 pgAdmin 與 Command Line Tools；本次只記錄決策，尚未安裝。 |
+| 雲端資料庫供應商 | 待決策 | v2 第 9 階段再比較 Neon、Supabase、Prisma Postgres 或其他託管 PostgreSQL。 |
 
 ### `src` 資料夾決策
 
 已確定使用 `src` 資料夾，應用程式原始碼位於 `src/app`，並與根目錄設定檔及專案文件分離。這是 Next.js 官方建立工具支援的標準選項，已於第一版 v1 實際採用。
+
+### v2 第 0 階段技術決策
+
+#### 1. 本機 PostgreSQL 開發方式
+
+- Windows 本機直接安裝 PostgreSQL。
+- 開發期間使用本機 PostgreSQL，搭配 pgAdmin 與 Command Line Tools。
+- 開發資料庫預計命名為 `personal_data_management_dev`。
+- PostgreSQL 資料目錄優先放在 D 槽。
+- 正式環境不直接連線至本機資料庫。
+- 本決策只記錄預定方式；v2 第 0 階段不安裝 PostgreSQL、不建立資料庫或環境變數。
+
+#### 2. 雲端 PostgreSQL
+
+- 雲端 PostgreSQL 供應商維持待決策，第 0 階段不指定供應商。
+- 開發期間使用本機 PostgreSQL。
+- v2 第 9 階段再比較 Neon、Supabase、Prisma Postgres 或其他託管 PostgreSQL。
+- 屆時依免費額度、連線限制、Vercel 相容性與維護成本決定。
+
+#### 3. Auth
+
+- 採用 Better Auth。
+- 第二版只實作 Email／Password 註冊、登入與登出。
+- 不做 OAuth、Email 驗證、忘記密碼與 2FA。
+
+#### 4. Session
+
+- 採用資料庫 Session。
+- 所有受保護頁面與資料操作都必須在伺服器端驗證 Session。
+- 不能只因 Cookie 存在就視為已登入。
+
+#### 5. 密碼雜湊
+
+- 使用 Better Auth 預設密碼雜湊方案。
+- 不自行另外實作 SHA-256、bcrypt、Argon2id 或第二層雜湊。
+- 資料庫不得保存明文密碼。
+- 密碼、密碼雜湊與驗證資訊不得寫入 `AuditLog`、console、README、Notion 或 Git Repository。
+
+#### 6. 輸入驗證
+
+- 採用 Zod 穩定版，作為執行時輸入驗證工具。
+- 前端驗證用於改善使用體驗。
+- 伺服器端 Zod 驗證才是資料進入業務邏輯與資料庫前的必要檢查。
+- 不以 TypeScript、HTML `required` 或 Prisma 取代伺服器端驗證。
+
+#### 7. Server Components、Server Actions 與 Route Handlers 分工
+
+- Server Components：讀取頁面資料。
+- Server Actions：處理網站內部表單與 CRUD 資料異動。
+- Route Handlers：處理 Better Auth 所需 API 與真正需要 HTTP API 的功能。
+- 不重複建立一套 `/api/records` CRUD。
+- Server Action 與 Route Handler 都必須驗證 Session 與必要輸入。
+
+#### 8. 測試策略
+
+- 每個開發階段都執行人工驗證。
+- 每個階段執行 `npm.cmd run lint` 與 `npm.cmd run build`。
+- v2 第 8 階段採 Vitest 測試 Zod Schema 與純邏輯。
+- v2 第 8 階段採 Playwright 測試註冊、登入、CRUD 與越權情境。
+- 不以覆蓋率數字為主要目標，優先測試登入、資料異動與使用者資料隔離。
+
+#### 9. 機密資料與 Git 安全規則
+
+- 本機機密放在 `.env.local`，不得提交 Git；`.env.local` 將於需要環境設定的後續階段才建立。
+- Repository 只提供不含真實值的 `.env.example`。
+- 正式環境機密存放於 Vercel Environment Variables。
+- 每次新增環境設定後，確認 `git status` 與 `git check-ignore`。
+- `ownerId` 只能由伺服器根據 Session 決定，不接受前端指定。
+- 查看、修改、刪除資料時，同時檢查 `recordId` 與目前登入者 `ownerId`。
+- 錯誤訊息不得洩漏帳號存在狀態、SQL、stack trace、系統路徑或其他內部資訊。
+- `AuditLog` 不記錄密碼、密碼雜湊、Session Token、Cookie、完整連線字串或其他機密。
+- 專案只使用虛構資料，不保存真實敏感個資。
 
 ## 7. 頁面規劃
 
@@ -161,7 +233,7 @@
 | `details` | 必要摘要，不保存密碼或完整敏感資料 |
 | `createdAt` | 操作時間 |
 
-帳號驗證與 Session 方案目前為待決策。若後續方案需要額外資料表，會在第二版帳號驗證階段依當時穩定版官方文件確認，不提前加入。
+帳號驗證確定採用 Better Auth，Session 確定採用資料庫 Session。Better Auth 所需的帳號、Session 與驗證相關資料表，會在 v2 第 1～2 階段依當時穩定版官方文件確認，不在第 0 階段提前建立。
 
 ## 9. 第一版 v1 開發階段與完成條件
 
@@ -195,32 +267,42 @@
 
 ## 10. 第二版 v2 分階段執行順序
 
-第二版 v2 尚未開始。以下階段必須依序進行；每階段開始前先說明目的，完成後記錄修改檔案、主要程式碼、啟動方式與測試結果。
+第二版 v2 已進入開發流程，v2 第 0 階段已完成，v2 第 1 階段尚未開始。以下階段必須依序進行；每階段開始前先說明目的，完成後記錄修改檔案、主要程式碼、啟動方式與測試結果。
 
 ### v2 第 0 階段：確認待決策事項與安全邊界
 
-完成條件：
+狀態：**已完成**（2026-08-07）。
 
-- 記錄帳號驗證方案、Session 策略與密碼雜湊方案的決策。
-- 記錄輸入驗證函式庫、後端操作方式及測試框架的決策。
-- 記錄本機 PostgreSQL 開發方式；雲端資料庫供應商可延至部署階段決定。
-- 決策前重新核對當時穩定版官方文件，不使用 Early Access 方案。
-- 不提交密碼、連線字串、Session Secret 或其他機密。
+完成結果：
+
+- 已決定本機 PostgreSQL 開發方式，尚未安裝 PostgreSQL 或建立資料庫。
+- 已決定使用 Better Auth、資料庫 Session 與 Better Auth 預設密碼雜湊方案。
+- 已決定使用 Zod 穩定版，並確定前端與伺服器端驗證責任。
+- 已決定 Server Components、Server Actions 與 Route Handlers 的責任分工。
+- 已決定每階段人工驗證、lint、build，以及 v2 第 8 階段使用 Vitest 與 Playwright。
+- 已記錄機密資料、Git、資料擁有權、錯誤訊息與 `AuditLog` 安全規則。
+- 雲端 PostgreSQL 供應商仍為待決策，延至 v2 第 9 階段評估。
 
 ### v2 第 1 階段：PostgreSQL 與 Prisma 基礎
 
+狀態：**尚未開始**。
+
 完成條件：
 
+- 依第 0 階段決策在 Windows 本機安裝 PostgreSQL、pgAdmin 與 Command Line Tools，資料目錄優先放在 D 槽。
+- 建立本機開發資料庫 `personal_data_management_dev`。
 - 安裝 Prisma 穩定版並建立 PostgreSQL 開發資料庫連線。
 - 建立經確認的初始 Schema 與 Migration。
 - 能以開發工具確認資料表存在。
-- 環境變數與機密資料未提交版本控制。
+- 建立 `.env.local` 與不含真實值的 `.env.example`，並以 `git status`、`git check-ignore` 確認機密資料未提交版本控制。
 
 ### v2 第 2 階段：註冊、登入與登出
 
 完成條件：
 
-- 依已記錄的帳號驗證、Session 與密碼雜湊決策實作。
+- 使用 Better Auth 實作 Email／Password 註冊、登入與登出。
+- 使用資料庫 Session，所有受保護頁面及資料操作都在伺服器端驗證 Session。
+- 使用 Better Auth 預設密碼雜湊方案，不自行增加第二層雜湊。
 - 密碼以可靠演算法雜湊後保存，不保存明文密碼。
 - 可完成註冊、登入與登出。
 - 受保護頁面要求有效登入狀態。
@@ -262,7 +344,9 @@
 
 完成條件：
 
-- 主要欄位具有前端提示與伺服器端驗證。
+- 使用 Zod 穩定版建立執行時驗證 Schema。
+- 主要欄位具有前端提示，並在伺服器端以 Zod 執行必要驗證。
+- 不以 TypeScript、HTML `required` 或 Prisma 取代伺服器端驗證。
 - 常見錯誤有一致且不洩漏系統細節的訊息。
 - 操作成功、驗證失敗、查無資料及無權存取均有清楚提示。
 
@@ -270,8 +354,9 @@
 
 完成條件：
 
-- 先完成測試框架與測試層級決策，再新增測試。
-- 覆蓋註冊、登入、登出、CRUD、驗證失敗及越權情境。
+- 使用 Vitest 測試 Zod Schema 與純邏輯。
+- 使用 Playwright 測試註冊、登入、CRUD 與越權情境。
+- 不以覆蓋率數字為主要目標，優先覆蓋登入、資料異動與使用者資料隔離。
 - 主要測試可重複執行，測試資料只使用虛構內容。
 - lint、TypeScript 與 production build 均通過。
 
@@ -287,12 +372,12 @@
 
 ## 11. 目前進度
 
-更新日期：2026-08-06（Asia/Taipei）
+更新日期：2026-08-07（Asia/Taipei）
 
 | 版本 | 狀態 | 說明 |
 | --- | --- | --- |
 | 第一版 v1 | 已完成 | Next.js 骨架、首頁、lint、build、GitHub 首次推送、本機與遠端同步、Vercel Production Deployment 及公開首頁 smoke test 均已完成。 |
-| 第二版 v2 | 尚未開始 | PostgreSQL、Prisma、帳號驗證、CRUD、資料隔離、輸入驗證、錯誤處理、操作紀錄及測試均尚未實作。 |
+| 第二版 v2 | 開發中 | v2 第 0 階段技術決策已完成；v2 第 1 階段尚未開始，PostgreSQL、Prisma、帳號驗證、CRUD、資料隔離、輸入驗證、錯誤處理、操作紀錄及測試均尚未實作。 |
 
 ### 環境檢查紀錄
 
@@ -334,9 +419,10 @@
 
 ### 第二版 v2 尚未完成項目
 
-- 尚未安裝 Prisma、帳號驗證或輸入驗證套件。
-- 尚未建立資料庫、環境變數、帳號驗證、API、CRUD、資料隔離、操作紀錄或測試。
-- Auth、Session、密碼雜湊、輸入驗證函式庫、後端操作方式、測試框架、本機 PostgreSQL 開發方式及雲端資料庫供應商均仍為待決策。
+- v2 第 0 階段已完成，v2 第 1 階段尚未開始。
+- 尚未安裝 PostgreSQL、Prisma、Better Auth、Zod、Vitest 或 Playwright。
+- 尚未建立資料庫、`.env.local`、`.env.example`、Prisma Schema、Migration、帳號驗證、API、CRUD、資料隔離、操作紀錄或測試。
+- 雲端 PostgreSQL 供應商仍為待決策，預定於 v2 第 9 階段評估。
 
 ## 12. 重要技術決策紀錄
 
@@ -352,8 +438,15 @@
 | 2026-07-16 | 首頁不載入遠端 Google Fonts | 使用系統字型，避免本機開發及 production build 依賴外部字型網路連線。 |
 | 2026-08-06 | 將版本明確分為第一版 v1 與第二版 v2 | 第一版聚焦專案骨架及 GitHub／Vercel 驗證；第二版完成個人資料管理 MVP。 |
 | 2026-08-06 | 第一版 v1 標記為已完成 | GitHub 同步、Vercel Production Deployment 與公開首頁 smoke test 均已驗證。 |
-| 2026-08-06 | Auth、Session、密碼雜湊、輸入驗證函式庫、後端操作方式及測試框架維持待決策 | 第二版對應階段開始前再依穩定版文件評估，不提前選定或安裝。 |
-| 2026-08-06 | 本機 PostgreSQL 開發方式及雲端資料庫供應商維持待決策 | 第二版資料庫與部署階段再評估實際環境需求。 |
+| 2026-08-07 | 本機開發採 Windows 直接安裝 PostgreSQL | 開發期間搭配 pgAdmin 與 Command Line Tools，資料庫預計命名為 `personal_data_management_dev`，資料目錄優先放在 D 槽；正式環境不連本機資料庫。 |
+| 2026-08-07 | 雲端 PostgreSQL 供應商維持待決策 | v2 第 9 階段再依免費額度、連線限制、Vercel 相容性與維護成本比較 Neon、Supabase、Prisma Postgres 或其他方案。 |
+| 2026-08-07 | 帳號驗證採 Better Auth | 第二版只實作 Email／Password 註冊、登入與登出，不做 OAuth、Email 驗證、忘記密碼或 2FA。 |
+| 2026-08-07 | Session 採資料庫 Session | 所有受保護頁面與資料操作都在伺服器端驗證 Session，不能只因 Cookie 存在就視為已登入。 |
+| 2026-08-07 | 密碼雜湊採 Better Auth 預設方案 | 不自行實作 SHA-256、bcrypt、Argon2id 或第二層雜湊，且不保存或記錄明文密碼與驗證機密。 |
+| 2026-08-07 | 輸入驗證採 Zod 穩定版 | 前端驗證改善體驗，伺服器端 Zod 驗證是進入業務邏輯與資料庫前的必要檢查。 |
+| 2026-08-07 | 確定 Server Components、Server Actions 與 Route Handlers 分工 | Server Components 負責讀取，Server Actions 負責網站內部異動，Route Handlers 只處理 Better Auth 與必要 HTTP API，不建立重複的 `/api/records` CRUD。 |
+| 2026-08-07 | 測試採階段性人工驗證、Vitest 與 Playwright | 每階段執行人工驗證、lint、build；v2 第 8 階段以 Vitest 測試 Schema／純邏輯，以 Playwright 測試主要流程與越權情境。 |
+| 2026-08-07 | 確定機密資料與 Git 安全規則 | 本機機密只放 `.env.local`、Repository 只提供無真實值的 `.env.example`、正式機密放 Vercel Environment Variables，並落實資料擁有權及錯誤訊息安全。 |
 
 ## 13. 測試、啟動與公開網址
 
