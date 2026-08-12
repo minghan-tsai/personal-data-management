@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Home() {
   return (
     <main className="flex min-h-screen items-center justify-center px-6 py-16">
@@ -16,26 +18,23 @@ export default function Home() {
         </div>
 
         <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-          <button
-            type="button"
-            disabled
-            className="rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white opacity-70"
+          <Link
+            className="rounded-xl bg-blue-700 px-6 py-3 text-center font-semibold text-white transition hover:bg-blue-800"
+            href="/login"
           >
-            登入（即將開放）
-          </button>
-          <button
-            type="button"
-            disabled
-            className="rounded-xl border border-slate-300 px-6 py-3 font-semibold text-slate-700 opacity-70"
+            登入
+          </Link>
+          <Link
+            className="rounded-xl border border-slate-300 px-6 py-3 text-center font-semibold text-slate-700 transition hover:bg-slate-50"
+            href="/register"
           >
-            註冊（即將開放）
-          </button>
+            註冊
+          </Link>
         </div>
 
         <div className="mt-10 border-t border-slate-200 pt-6">
           <p className="text-sm leading-6 text-slate-500">
-            目前為第 1 階段專案骨架，尚未建立登入、資料庫或資料管理功能。
-            本作品僅使用虛構測試資料。
+            目前已進入 v2 帳號驗證階段，資料管理功能仍在後續規劃中。本作品僅使用虛構測試資料。
           </p>
         </div>
       </section>

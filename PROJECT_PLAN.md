@@ -33,7 +33,7 @@
 
 第二版 v2 的目標是在第一版骨架與部署流程上，完成具備 PostgreSQL、Prisma、帳號驗證、個人紀錄 CRUD、使用者資料隔離、輸入驗證、錯誤處理、操作紀錄及測試的 MVP。
 
-狀態：**開發中**。v2 第 0～1 階段已完成，v2 第 2 階段尚未開始。
+狀態：**開發中**。v2 第 0～2 階段已完成，v2 第 3 階段尚未開始。
 
 第二版必須依階段執行；尚未決定的技術事項需先完成決策與記錄，不在計畫階段擅自選定。
 
@@ -86,9 +86,9 @@
 | 樣式 | Tailwind CSS | 可快速建立簡潔一致的介面，不需額外 UI 元件庫。 |
 | 資料庫 | PostgreSQL 18 | Windows 本機開發環境已安裝 PostgreSQL 18；正式環境未來使用部署環境可連線的 PostgreSQL，不依賴本機 `localhost`。 |
 | ORM／Database Toolkit | Prisma 7.9.1 | 已用於 PostgreSQL 資料存取、Schema、Migration 與 Prisma Client 產生。 |
-| 身分驗證 | Better Auth（已決策、尚未實作） | 第二版只實作 Email／Password 註冊、登入與登出，不做 OAuth、Email 驗證、忘記密碼或 2FA。 |
-| Session 策略 | 資料庫 Session（已決策、尚未實作） | 所有受保護頁面與資料操作都在伺服器端驗證 Session，不能只因 Cookie 存在就視為已登入。 |
-| 密碼雜湊方案 | Better Auth 預設方案（已決策、尚未實作） | 不自行發明密碼演算法或增加第二層雜湊，資料庫不得保存明文密碼。 |
+| 身分驗證 | Better Auth 1.6.27（已實作） | 已完成 Email／Password 註冊、登入與登出；不做 OAuth、Email 驗證、忘記密碼或 2FA。 |
+| Session 策略 | 資料庫 Session（已實作） | Session 儲存於 PostgreSQL；受保護頁面在伺服器端驗證有效 Session，不能只因 Cookie 存在就視為已登入。 |
+| 密碼雜湊方案 | Better Auth 預設方案（已實作） | credential hash 儲存於 `Account.password`；不自行發明密碼演算法或增加第二層雜湊，資料庫不保存明文密碼。 |
 | 欄位驗證函式庫 | Zod 穩定版（已決策、尚未安裝） | 所有外部輸入都必須經過伺服器端執行時驗證。 |
 | 後端操作方式 | Server Components、Server Actions、Route Handlers 分工 | 讀取、網站內部異動及必要 HTTP API 各自使用對應機制，不重複建立 `/api/records` CRUD。 |
 | 測試策略 | 單元與整合／流程測試為主 | 每階段先執行人工驗證、lint 與 build；後續逐步加入 Vitest 與 Playwright，相關套件尚未安裝。 |
@@ -189,6 +189,8 @@
 
 第一版 v1 只建立 `/` 首頁。登入與註冊只顯示無功能的預留按鈕，不建立對應頁面或驗證流程。其餘路徑屬於第二版 v2 MVP。
 
+v2 第 2 階段已建立 `/register`、`/login` 與最小受保護頁面 `/records`；目前 `/records` 只驗證登入狀態，尚未開始 Record 列表或 CRUD。其餘資料管理頁面仍留待後續階段。
+
 ## 8. 第二版 v2 資料模型
 
 ### 第 0 階段概念草圖
@@ -238,42 +240,46 @@
 
 概念上的 `AuditLog` 預計涵蓋建立、修改、刪除，以及登入或其他重要安全事件；實際記錄範圍會在對應功能階段確認。
 
-### 第 1 階段實際初始 Prisma Schema
+### 第 1 階段初始 Schema 與第 2 階段 Auth 整合後實際 Schema
 
-目前 [Prisma Schema](prisma/schema.prisma) 與初始 Migration 已實際建立下列模型。這是資料庫基礎版本，不假裝與第 0 階段概念草圖完全一致：
+v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`、`AuditLog` 三個應用模型。v2 第 2 階段依 Better Auth 1.6.27 官方資料模型完成 Auth 整合後，目前 [Prisma Schema](prisma/schema.prisma) 的實際狀態如下：
 
 #### `User`（目前實際）
 
 - `id`
+- `name`
 - `email`
-- `password`
+- `emailVerified`
+- `image`
 - `createdAt`
 - `updatedAt`
 - `records`
 - `auditLogs`
+- `sessions`
+- `accounts`
 
-#### `Record`（目前實際）
+第 1 階段初始欄位 `User.password` 已移除。Email／Password credential 的密碼 hash 改由 Better Auth 儲存於 `Account.password`，不保存明文密碼。
 
-- `id`
-- `title`
-- `content`
-- `createdAt`
-- `updatedAt`
-- `userId`
-- `user`
+#### Better Auth Models（目前實際）
 
-#### `AuditLog`（目前實際）
+- `Session`：Better Auth Database Session Model，包含唯一 Session Token、到期時間、使用者關聯及必要 client 資訊欄位；實際 PostgreSQL Table 為 `session`。
+- `Account`：Better Auth Account Model；Email／Password 使用 `providerId = credential`，credential hash 儲存於 `Account.password`；實際 PostgreSQL Table 為 `account`。
+- `Verification`：Better Auth Verification Model；實際 PostgreSQL Table 為 `verification`。
 
-- `id`
-- `action`
-- `target`
-- `createdAt`
-- `userId`
-- `user`
+#### `Record` 與 `AuditLog`（目前實際）
 
-目前 `User` 對 `Record`、`AuditLog` 均為一對多關係，使用 `userId` Foreign Key，並設定 `onDelete: Cascade`。初始 Migration 已建立 `User`、`Record`、`AuditLog` 與 Prisma 系統表 `_prisma_migrations`。
+- `Record` 目前包含 `id`、`title`、`content`、`createdAt`、`updatedAt`、`userId` 與 `user`。
+- `AuditLog` 目前包含 `id`、`action`、`target`、`createdAt`、`userId` 與 `user`。
+- `User -> Record` 與 `User -> AuditLog` 一對多關係均完整保留，使用 `userId` Foreign Key 並設定 `onDelete: Cascade`。
 
-概念草圖與實際 Schema 的主要差異包括：`PersonalRecord` 實際命名為 `Record`，欄位由 `displayName`／`email`／`phone`／`note` 簡化為 `title`／`content`；`User.passwordHash` 目前實際命名為 `password`；`AuditLog` 目前使用 `action`／`target`，尚未加入概念草圖中的 `recordId`／`details`。Better Auth 尚未實作，接入後 `User`、Auth 與 Session 相關 Schema 可能需要調整；本次只更新文件，不修改 Schema 或建立新 Migration。
+概念草圖與實際 Schema 仍有刻意保留的差異：`PersonalRecord` 實際命名為 `Record`，欄位由概念上的 `displayName`／`email`／`phone`／`note` 簡化為 `title`／`content`；`AuditLog` 目前仍使用 `action`／`target`，尚未加入概念草圖中的 `recordId`／`details`。這些後續資料模型調整不屬於 v2 第 2 階段。
+
+#### Auth Migration 與目前 Tables
+
+- 初始 Migration `20260810110544_init` 保持原狀，未被修改或刪除。
+- v2 第 2 階段新增並成功套用 `20260812070058_add_auth` Migration。
+- `prisma migrate status` 已確認 2 個 Migration 均已套用，資料庫 Schema 為最新。
+- pgAdmin 已確認目前存在 7 張 Tables：`User`、`Record`、`AuditLog`、`account`、`session`、`verification`、`_prisma_migrations`。
 
 ## 9. 第一版 v1 開發階段與完成條件
 
@@ -307,7 +313,7 @@
 
 ## 10. 第二版 v2 分階段執行順序
 
-第二版 v2 已進入開發流程，v2 第 0～1 階段已完成，v2 第 2 階段尚未開始。以下階段必須依序進行；每階段開始前先說明目的，完成後記錄修改檔案、主要程式碼、啟動方式與測試結果。
+第二版 v2 已進入開發流程，v2 第 0～2 階段已完成，v2 第 3 階段尚未開始。以下階段必須依序進行；每階段開始前先說明目的，完成後記錄修改檔案、主要程式碼、啟動方式與測試結果。
 
 ### v2 第 0 階段：確認待決策事項與安全邊界
 
@@ -344,7 +350,7 @@
 - pgAdmin 已確認 `User`、`Record`、`AuditLog` 與 `_prisma_migrations` Tables 存在。
 - 已成功執行 `npx prisma generate`，將 Prisma Client 產生至 `src/generated/prisma`。
 - 已建立 `src/lib/prisma.ts`，使用 `PrismaClient`、`PrismaPg`、`DATABASE_URL` 與 `globalThis` singleton，避免 Next.js 開發環境 Hot Reload 重複建立大量連線。
-- 本次重新執行 `prisma validate` 成功；`prisma migrate status` 確認 `personal_data_management_dev` 位於 `localhost:5432`、找到 1 個 Migration，且 Database Schema 已是最新。
+- 第 1 階段驗收時重新執行 `prisma validate` 成功；當時 `prisma migrate status` 找到 1 個 Migration 且 Database Schema 已是最新。第 2 階段加入 Auth Migration 後，目前共有 2 個 Migration 且均已套用。
 - `npm.cmd run lint` 與 `npm.cmd run build` 已於 2026-08-12 再次通過；Next.js Production Build 正常。
 - 已建立並推送 Git tag `v2-stage-1`，指向 commit `923978164e1a333cfc5eb54024e18b1374f3e9e6`，tag 訊息為「完成 v2 第 1 階段 PostgreSQL 與 Prisma 基礎」。
 
@@ -354,6 +360,7 @@
 - 已執行 `npm audit` 與非破壞性的 `npm audit fix`，未使用 `npm audit fix --force`，避免未評估的 major／dependency range 變更造成相容性問題。
 - 已審核並允許必要 install scripts：`@prisma/engines`、`prisma`、`esbuild`、`sharp`、`unrs-resolver`。
 - 2026-08-12 重新執行 `npm audit`，目前仍有 3 個 high severity vulnerabilities，來源為 Next.js 依賴的 PostCSS 與 sharp；此風險已記錄，後續正常套件更新時重新檢查，不阻塞第 1 階段完成。
+- v2 第 2 階段安裝 Better Auth 1.6.27 與 `@better-auth/prisma-adapter` 1.6.27 後，既有 3 個 high severity vulnerabilities 仍維持已記錄狀態；未使用 `npm audit fix --force`。
 
 #### Vercel Deployment Debug 紀錄
 
@@ -365,17 +372,37 @@
 
 ### v2 第 2 階段：註冊、登入與登出
 
-狀態：**尚未開始**。
+狀態：**已完成**（2026-08-12）。
 
-完成條件：
+完成結果：
 
-- 使用 Better Auth 實作 Email／Password 註冊、登入與登出。
-- 使用資料庫 Session，所有受保護頁面及資料操作都在伺服器端驗證 Session。
-- 使用 Better Auth 預設密碼雜湊方案，不自行增加第二層雜湊。
-- 密碼以可靠演算法雜湊後保存，不保存明文密碼。
-- 可完成註冊、登入與登出。
-- 受保護頁面要求有效登入狀態。
-- 已測試錯誤帳密、重複 Email 與未登入存取。
+- 已安裝並整合 Better Auth 1.6.27 與 `@better-auth/prisma-adapter` 1.6.27，沿用 `src/lib/prisma.ts` 的共用 Prisma Client 連接 PostgreSQL。
+- 已啟用 Email／Password 註冊、登入與登出，並使用 Better Auth 預設密碼雜湊方案；未自行增加 SHA-256、bcrypt、Argon2 或第二層雜湊。
+- 已完成 Database Session；Session 儲存於 PostgreSQL `session` Table。Cookie 只作為 Session Token 載體，伺服器使用 `auth.api.getSession({ headers })` 驗證 Session 是否有效。
+- 已新增 `src/lib/auth.ts` 作為 Better Auth Server 設定、`src/lib/auth-client.ts` 作為 Browser Client，以及 `src/lib/session.ts` 共用伺服器端 Session 取得與保護邏輯。
+- 已新增 Better Auth Route Handler `src/app/api/auth/[...all]/route.ts`，本階段未建立 `/api/records` 或其他 Record CRUD API。
+- 已新增 `/register`、`/login`，以及作為最小 Protected Page 的 `/records`。
+- `/records` 未登入時會 redirect 至 `/login`；登入後由 Server Component 驗證 Database Session。該頁尚未查詢或建立 Record，也未開始 Record 列表或 CRUD。
+- 登入與註冊頁面均已加入顯示／隱藏密碼按鈕及固定導向 `/` 的返回首頁連結。
+- 已完成正常註冊、重複 Email、正確登入、錯誤密碼、不存在帳號、未登入直接存取 `/records`、登出及登出後再次存取等人工驗證。
+- 已確認 User 與 credential Account 會寫入 PostgreSQL，`accountId`、`providerId`、`userId` 與關聯符合 Better Auth 需求。
+- 已確認 credential 密碼只保存 Better Auth hash 於 `Account.password`，不保存明文；登出後 Database Session 會清除。
+- `prisma validate`、`prisma migrate status`、`npm.cmd run lint` 與 `npm.cmd run build` 均已通過。
+
+#### Auth 人工驗收 Debug 紀錄
+
+- 人工驗收時，一個既有虛構測試帳號曾出現註冊後可使用自動建立的 Session，但登出後無法以預期測試密碼重新登入。
+- 直接使用 Better Auth 1.6.27 原生 `verifyPassword` 驗證後，確認該單筆舊 credential hash 與預期測試密碼不相符。
+- Account 結構、Prisma Schema、Database Session、Node.js 與 Prisma Adapter 均已排除為系統性原因。
+- 使用 Better Auth 原生 `hashPassword` 修復該單筆虛構 credential 後，重新登入與 `/records` Server Session 驗證成功。
+- 另以全新虛構帳號完成 sign-up → sign-out → sign-in → Protected Page → sign-out 流程，確認目前 Auth 流程正常。
+- Debug 臨時 scripts 與測試暫存檔均已刪除，未納入 Git；文件不記錄測試密碼、完整 hash、Session Token 或其他機密。
+
+#### Vercel 範圍說明
+
+- 本階段只確認本機 production build 成功。
+- 正式環境尚未配置可供 Auth 使用的雲端 PostgreSQL，因此未將 v2 第 2 階段 Production Auth／Database 驗證標記為完成。
+- 雲端 PostgreSQL 供應商決策與正式 Auth 驗證仍留待 v2 第 9 階段，不提前導入任何供應商。
 
 ### v2 第 3 階段：新增與列表
 
@@ -446,7 +473,7 @@
 | 版本 | 狀態 | 說明 |
 | --- | --- | --- |
 | 第一版 v1 | 已完成 | Next.js 骨架、首頁、lint、build、GitHub 首次推送、本機與遠端同步、Vercel Production Deployment 及公開首頁 smoke test 均已完成。 |
-| 第二版 v2 | 開發中 | v2 第 0 階段技術決策與安全邊界已完成；v2 第 1 階段 PostgreSQL 與 Prisma 基礎已完成；v2 第 2 階段帳號驗證尚未開始。 |
+| 第二版 v2 | 開發中 | v2 第 0 階段技術決策與安全邊界、第 1 階段 PostgreSQL 與 Prisma 基礎、第 2 階段 Better Auth 與 Database Session 均已完成；v2 第 3 階段尚未開始。 |
 
 ### 環境檢查紀錄
 
@@ -464,6 +491,8 @@
 - PostgreSQL：`18.4`，Windows 服務 `postgresql-x64-18` 正常執行，Port `5432`。
 - PostgreSQL 安裝位置：`D:\PostgreSQL\18`；Data Directory：`D:\PostgreSQL\18\data`。
 - Prisma CLI／Client／PostgreSQL Adapter：`7.9.1`。
+- Better Auth：`1.6.27`。
+- `@better-auth/prisma-adapter`：`1.6.27`。
 - 工作區已由 OneDrive 搬移至本機路徑 `D:\Projects\動態網站`，專案建立於此路徑下。
 
 ### 第一版 v1 本機驗證結果
@@ -489,17 +518,15 @@
 - 公開網址：`https://personal-data-management.vercel.app`
 - 已實際開啟公開網址，首頁 smoke test 通過。
 
-### 第二版 v2 第 0～1 階段 Git 與部署狀態
+### 第二版 v2 第 0～2 階段 Git 與部署狀態
 
-本次文件修改前的 Repository 狀態：
-
-- `HEAD`、`main`、`origin/main` 與 tag `v2-stage-1` 的 peeled commit 均為 `923978164e1a333cfc5eb54024e18b1374f3e9e6`。
-- 最新 commit message：`chore: 補充環境變數範例與 Git 忽略規則`。
-- `main` 與 `origin/main` 同步，工作樹在本次計畫書修改前為 clean。
+- v2 第 2 階段正式收尾完成後，`main` 與 `origin/main` 同步，並以 annotated tag `v2-stage-2` 標記 Better Auth 與 Database Session 完成狀態。
 - tag `v2-stage-0` 指向 commit `aca8047b64d9da396a424068c21d9c7a585e1a08`，訊息為「完成 v2 第 0 階段技術決策與安全邊界」。
 - tag `v2-stage-1` 指向 commit `923978164e1a333cfc5eb54024e18b1374f3e9e6`，訊息為「完成 v2 第 1 階段 PostgreSQL 與 Prisma 基礎」。
+- tag `v2-stage-2` 訊息為「完成 v2 第 2 階段 Better Auth 與 Database Session」。
 - Vercel Production 已在加入 `postinstall` 修正後成功完成乾淨建置與部署。
 - 2026-08-12 公開網址再次驗證為 HTTP 200，首頁正常顯示。
+- v2 第 2 階段 production build 已在本機通過；正式環境 Auth 尚未配置雲端 PostgreSQL，因此 Production Auth／Database 流程尚未驗證，保留至 v2 第 9 階段。
 
 ### 第二版 v2 階段狀態
 
@@ -507,13 +534,16 @@
 | --- | --- | --- |
 | v2 第 0 階段 | 已完成 | 技術選型、安全邊界、概念資料模型、權限原則與開發順序已確認；tag `v2-stage-0` 已建立並推送。 |
 | v2 第 1 階段 | 已完成 | PostgreSQL、Prisma、初始 Schema／Migration、Prisma Client、共用 Client、環境變數與 Git 安全、lint／build、Vercel Production 驗證均完成；tag `v2-stage-1` 已建立並推送。 |
-| v2 第 2 階段 | 尚未開始 | Better Auth、資料庫 Session、註冊、登入與登出均尚未實作。 |
+| v2 第 2 階段 | 已完成 | Better Auth、Prisma Adapter、Auth Schema／Migration、Database Session、註冊、登入、登出、最小 Protected Page、人工驗證及 lint／build 均完成；tag `v2-stage-2` 已建立並推送。 |
+| v2 第 3 階段 | 尚未開始 | Record 新增與列表尚未實作。 |
 
 ### 第二版 v2 尚未完成項目
 
-- 尚未安裝或實作 Better Auth、Zod、Vitest 或 Playwright。
-- 尚未建立 Better Auth／Session Schema、註冊、登入、登出、業務 API、CRUD、資料隔離、操作紀錄或測試。
-- 雲端 PostgreSQL 供應商仍為待決策，預定於 v2 第 9 階段評估。
+- Zod 尚未安裝，完整伺服器端輸入驗證與一致錯誤處理留待 v2 第 7 階段。
+- Record CRUD 與完整使用者資料隔離尚未實作，v2 第 3 階段尚未開始。
+- `AuditLog` 實際操作紀錄尚未實作。
+- Vitest 與 Playwright 尚未安裝或建立測試，留待 v2 第 8 階段。
+- 雲端 PostgreSQL 供應商仍為待決策，正式環境 Auth／Database 驗證預定於 v2 第 9 階段處理。
 
 ## 12. 重要技術決策紀錄
 
@@ -542,7 +572,11 @@
 | 2026-08-12 | Prisma 7 本機環境採 `.env` 與 `prisma.config.ts` | 這是目前實際實作；`.env` 受 Git 忽略，Repository 僅追蹤不含真實值的 `.env.example`，不強制改回原規劃的 `.env.local`。 |
 | 2026-08-12 | Vercel 安裝流程加入 `postinstall: prisma generate` | Prisma Client 產物受 Git 忽略，乾淨部署環境必須在安裝後自動產生，避免 `Cannot find module '@/generated/prisma/client'`。 |
 | 2026-08-12 | 保留 3 個已記錄的 high severity audit 風險 | 已執行非破壞性 `npm audit fix`，未使用 `--force`；後續正常套件更新時再評估 PostCSS 與 sharp 上游修正。 |
-| 2026-08-12 | v2 第 1 階段標記為完成 | lint、build、Prisma validate、migration status、Git 同步、tag 與 Vercel Production 均已驗證；Better Auth 留待第 2 階段。 |
+| 2026-08-12 | v2 第 1 階段標記為完成 | lint、build、Prisma validate、migration status、Git 同步、tag 與 Vercel Production 均已驗證；Better Auth 當時留待第 2 階段。 |
+| 2026-08-12 | Better Auth 採 1.6.27 並使用 Prisma Adapter | 以 `@better-auth/prisma-adapter` 連接既有 Prisma Client 與 PostgreSQL，完成 Email／Password 註冊、登入與登出。 |
+| 2026-08-12 | v2 第 2 階段完成 Database Session 與伺服器端驗證 | Session 儲存於 PostgreSQL `session` Table；受保護頁面使用 `auth.api.getSession(...)` 驗證有效 Session，Cookie 存在本身不代表登入成功。 |
+| 2026-08-12 | credential hash 改存於 `Account.password` | 依 Better Auth 官方模型移除 `User.password`，使用 Better Auth 預設 hash，不保存明文密碼，並保留 `User -> Record`、`User -> AuditLog` 關聯。 |
+| 2026-08-12 | v2 第 2 階段標記為完成 | Auth Schema／Migration、註冊、登入、登出、最小 Protected Page、人工驗收、Prisma 檢查、lint 與 production build 均已完成；Record CRUD 留待第 3 階段。 |
 
 ## 13. 測試、啟動與公開網址
 
