@@ -33,7 +33,7 @@
 
 第二版 v2 的目標是在第一版骨架與部署流程上，完成具備 PostgreSQL、Prisma、帳號驗證、個人紀錄 CRUD、使用者資料隔離、輸入驗證、錯誤處理、操作紀錄及測試的 MVP。
 
-狀態：**開發中**。v2 第 0 階段已完成，v2 第 1 階段尚未開始。
+狀態：**開發中**。v2 第 0～1 階段已完成，v2 第 2 階段尚未開始。
 
 第二版必須依階段執行；尚未決定的技術事項需先完成決策與記錄，不在計畫階段擅自選定。
 
@@ -84,17 +84,17 @@
 | 程式語言 | TypeScript | 提供型別檢查，降低欄位與資料流錯誤，符合常見企業開發方式。 |
 | 程式碼檢查 | ESLint | 在開發階段提早發現常見程式碼問題。 |
 | 樣式 | Tailwind CSS | 可快速建立簡潔一致的介面，不需額外 UI 元件庫。 |
-| 資料庫 | PostgreSQL | 主流關聯式資料庫，適合使用者、資料擁有權與稽核紀錄。 |
-| ORM | Prisma ORM 穩定版 | Schema、Migration 與型別安全查詢較容易學習；不採用 Early Access 版本。 |
-| 身分驗證 | Better Auth | 第二版只實作 Email／Password 註冊、登入與登出，不做 OAuth、Email 驗證、忘記密碼或 2FA。 |
-| Session 策略 | 資料庫 Session | 所有受保護頁面與資料操作都在伺服器端驗證 Session，不能只因 Cookie 存在就視為已登入。 |
-| 密碼雜湊方案 | Better Auth 預設方案 | 不自行實作 SHA-256、bcrypt、Argon2id 或第二層雜湊，資料庫不得保存明文密碼。 |
-| 欄位驗證函式庫 | Zod 穩定版 | 伺服器端 Zod 驗證是資料進入業務邏輯與資料庫前的必要檢查。 |
+| 資料庫 | PostgreSQL 18 | Windows 本機開發環境已安裝 PostgreSQL 18；正式環境未來使用部署環境可連線的 PostgreSQL，不依賴本機 `localhost`。 |
+| ORM／Database Toolkit | Prisma 7.9.1 | 已用於 PostgreSQL 資料存取、Schema、Migration 與 Prisma Client 產生。 |
+| 身分驗證 | Better Auth（已決策、尚未實作） | 第二版只實作 Email／Password 註冊、登入與登出，不做 OAuth、Email 驗證、忘記密碼或 2FA。 |
+| Session 策略 | 資料庫 Session（已決策、尚未實作） | 所有受保護頁面與資料操作都在伺服器端驗證 Session，不能只因 Cookie 存在就視為已登入。 |
+| 密碼雜湊方案 | Better Auth 預設方案（已決策、尚未實作） | 不自行發明密碼演算法或增加第二層雜湊，資料庫不得保存明文密碼。 |
+| 欄位驗證函式庫 | Zod 穩定版（已決策、尚未安裝） | 所有外部輸入都必須經過伺服器端執行時驗證。 |
 | 後端操作方式 | Server Components、Server Actions、Route Handlers 分工 | 讀取、網站內部異動及必要 HTTP API 各自使用對應機制，不重複建立 `/api/records` CRUD。 |
-| 測試框架 | Vitest 與 Playwright | v2 第 8 階段使用 Vitest 測試 Zod Schema 與純邏輯，使用 Playwright 測試主要使用者流程與越權情境。 |
+| 測試策略 | 單元與整合／流程測試為主 | 每階段先執行人工驗證、lint 與 build；後續逐步加入 Vitest 與 Playwright，相關套件尚未安裝。 |
 | 套件管理 | npm | Node.js 隨附、文件普遍，適合初學者。 |
 | 部署 | Vercel（第一版已採用） | 已完成 GitHub 整合、Production Deployment 與公開網址 smoke test。 |
-| 本機 PostgreSQL 開發方式 | Windows 本機直接安裝 | 開發期間使用本機 PostgreSQL，搭配 pgAdmin 與 Command Line Tools；本次只記錄決策，尚未安裝。 |
+| 本機 PostgreSQL 開發方式 | Windows 本機直接安裝（已完成） | PostgreSQL 18、pgAdmin 4 與 Command Line Tools 已安裝於 D 槽，開發資料庫已建立。 |
 | 雲端資料庫供應商 | 待決策 | v2 第 9 階段再比較 Neon、Supabase、Prisma Postgres 或其他託管 PostgreSQL。 |
 
 ### `src` 資料夾決策
@@ -107,10 +107,10 @@
 
 - Windows 本機直接安裝 PostgreSQL。
 - 開發期間使用本機 PostgreSQL，搭配 pgAdmin 與 Command Line Tools。
-- 開發資料庫預計命名為 `personal_data_management_dev`。
-- PostgreSQL 資料目錄優先放在 D 槽。
+- 開發資料庫命名為 `personal_data_management_dev`。
+- PostgreSQL 程式與資料目錄均位於 D 槽。
 - 正式環境不直接連線至本機資料庫。
-- 本決策只記錄預定方式；v2 第 0 階段不安裝 PostgreSQL、不建立資料庫或環境變數。
+- 此段記錄第 0 階段原決策；安裝、資料庫與環境設定已在 v2 第 1 階段完成。
 
 #### 2. 雲端 PostgreSQL
 
@@ -157,13 +157,14 @@
 
 - 每個開發階段都執行人工驗證。
 - 每個階段執行 `npm.cmd run lint` 與 `npm.cmd run build`。
-- v2 第 8 階段採 Vitest 測試 Zod Schema 與純邏輯。
-- v2 第 8 階段採 Playwright 測試註冊、登入、CRUD 與越權情境。
+- 單元測試與整合／流程測試為主，隨後續功能階段逐步加入。
+- v2 第 8 階段規劃採 Vitest 測試 Zod Schema 與純邏輯。
+- v2 第 8 階段規劃採 Playwright 測試註冊、登入、CRUD 與越權情境。
 - 不以覆蓋率數字為主要目標，優先測試登入、資料異動與使用者資料隔離。
 
 #### 9. 機密資料與 Git 安全規則
 
-- 本機機密放在 `.env.local`，不得提交 Git；`.env.local` 將於需要環境設定的後續階段才建立。
+- 原規劃以本機環境檔保存機密；Prisma 7 實際採 `.env` 搭配 `prisma.config.ts` 載入 `DATABASE_URL`，`.env` 不得提交 Git。
 - Repository 只提供不含真實值的 `.env.example`。
 - 正式環境機密存放於 Vercel Environment Variables。
 - 每次新增環境設定後，確認 `git status` 與 `git check-ignore`。
@@ -188,9 +189,11 @@
 
 第一版 v1 只建立 `/` 首頁。登入與註冊只顯示無功能的預留按鈕，不建立對應頁面或驗證流程。其餘路徑屬於第二版 v2 MVP。
 
-## 8. 第二版 v2 資料表草圖
+## 8. 第二版 v2 資料模型
 
-以下只記錄第二版 v2 的概念設計；第一版 v1 不建立資料庫、Prisma Schema 或資料表。實際 Schema 必須等第二版資料庫階段確認後才建立。
+### 第 0 階段概念草圖
+
+以下是 v2 第 0 階段的概念設計，用來描述預期領域資料與安全方向，不代表目前 Prisma Schema 的逐欄實作。v2 第 1 階段已依當時需求建立初始 Schema；兩者差異記錄於本節後段。
 
 ### `User`
 
@@ -233,7 +236,44 @@
 | `details` | 必要摘要，不保存密碼或完整敏感資料 |
 | `createdAt` | 操作時間 |
 
-帳號驗證確定採用 Better Auth，Session 確定採用資料庫 Session。Better Auth 所需的帳號、Session 與驗證相關資料表，會在 v2 第 1～2 階段依當時穩定版官方文件確認，不在第 0 階段提前建立。
+概念上的 `AuditLog` 預計涵蓋建立、修改、刪除，以及登入或其他重要安全事件；實際記錄範圍會在對應功能階段確認。
+
+### 第 1 階段實際初始 Prisma Schema
+
+目前 [Prisma Schema](prisma/schema.prisma) 與初始 Migration 已實際建立下列模型。這是資料庫基礎版本，不假裝與第 0 階段概念草圖完全一致：
+
+#### `User`（目前實際）
+
+- `id`
+- `email`
+- `password`
+- `createdAt`
+- `updatedAt`
+- `records`
+- `auditLogs`
+
+#### `Record`（目前實際）
+
+- `id`
+- `title`
+- `content`
+- `createdAt`
+- `updatedAt`
+- `userId`
+- `user`
+
+#### `AuditLog`（目前實際）
+
+- `id`
+- `action`
+- `target`
+- `createdAt`
+- `userId`
+- `user`
+
+目前 `User` 對 `Record`、`AuditLog` 均為一對多關係，使用 `userId` Foreign Key，並設定 `onDelete: Cascade`。初始 Migration 已建立 `User`、`Record`、`AuditLog` 與 Prisma 系統表 `_prisma_migrations`。
+
+概念草圖與實際 Schema 的主要差異包括：`PersonalRecord` 實際命名為 `Record`，欄位由 `displayName`／`email`／`phone`／`note` 簡化為 `title`／`content`；`User.passwordHash` 目前實際命名為 `password`；`AuditLog` 目前使用 `action`／`target`，尚未加入概念草圖中的 `recordId`／`details`。Better Auth 尚未實作，接入後 `User`、Auth 與 Session 相關 Schema 可能需要調整；本次只更新文件，不修改 Schema 或建立新 Migration。
 
 ## 9. 第一版 v1 開發階段與完成條件
 
@@ -267,7 +307,7 @@
 
 ## 10. 第二版 v2 分階段執行順序
 
-第二版 v2 已進入開發流程，v2 第 0 階段已完成，v2 第 1 階段尚未開始。以下階段必須依序進行；每階段開始前先說明目的，完成後記錄修改檔案、主要程式碼、啟動方式與測試結果。
+第二版 v2 已進入開發流程，v2 第 0～1 階段已完成，v2 第 2 階段尚未開始。以下階段必須依序進行；每階段開始前先說明目的，完成後記錄修改檔案、主要程式碼、啟動方式與測試結果。
 
 ### v2 第 0 階段：確認待決策事項與安全邊界
 
@@ -275,28 +315,57 @@
 
 完成結果：
 
-- 已決定本機 PostgreSQL 開發方式，尚未安裝 PostgreSQL 或建立資料庫。
+- 已決定採 PostgreSQL 與 Prisma，開發期間使用 Windows 本機 PostgreSQL，正式環境不依賴本機 `localhost`。
 - 已決定使用 Better Auth、資料庫 Session 與 Better Auth 預設密碼雜湊方案。
 - 已決定使用 Zod 穩定版，並確定前端與伺服器端驗證責任。
 - 已決定 Server Components、Server Actions 與 Route Handlers 的責任分工。
-- 已決定每階段人工驗證、lint、build，以及 v2 第 8 階段使用 Vitest 與 Playwright。
+- 已決定以單元與整合／流程測試為主，每階段執行人工驗證、lint、build，後續再逐步加入測試。
+- 已完成 `User`、`Record`／`PersonalRecord` 與 `AuditLog` 的概念草圖及資料擁有權方向。
 - 已記錄機密資料、Git、資料擁有權、錯誤訊息與 `AuditLog` 安全規則。
 - 雲端 PostgreSQL 供應商仍為待決策，延至 v2 第 9 階段評估。
+- 已建立並推送 Git tag `v2-stage-0`，指向 commit `aca8047b64d9da396a424068c21d9c7a585e1a08`。
 
 ### v2 第 1 階段：PostgreSQL 與 Prisma 基礎
 
-狀態：**尚未開始**。
+狀態：**已完成**（2026-08-12）。
 
-完成條件：
+完成結果：
 
-- 依第 0 階段決策在 Windows 本機安裝 PostgreSQL、pgAdmin 與 Command Line Tools，資料目錄優先放在 D 槽。
-- 建立本機開發資料庫 `personal_data_management_dev`。
-- 安裝 Prisma 穩定版並建立 PostgreSQL 開發資料庫連線。
-- 建立經確認的初始 Schema 與 Migration。
-- 能以開發工具確認資料表存在。
-- 建立 `.env.local` 與不含真實值的 `.env.example`，並以 `git status`、`git check-ignore` 確認機密資料未提交版本控制。
+- Windows 本機已安裝 PostgreSQL 18.4、pgAdmin 4 與 Command Line Tools；安裝位置為 `D:\PostgreSQL\18`，Data Directory 為 `D:\PostgreSQL\18\data`，服務 `postgresql-x64-18` 使用預設 Port `5432` 並正常執行。
+- 已使用 `postgres` 帳號完成連線，建立本機開發資料庫 `personal_data_management_dev`，並可由 pgAdmin 查看與管理。
+- 已安裝 Prisma 7.9.1、`@prisma/client`、`@prisma/adapter-pg`、`pg`、`@types/pg`、`dotenv` 與 `tsx`。
+- 已執行 Prisma 初始化，建立 `prisma/schema.prisma`、`prisma.config.ts` 與本機 `.env`。
+- Prisma 7 實際使用 `.env` 搭配 `prisma.config.ts` 載入 `DATABASE_URL`，未採原規劃的 `.env.local`。
+- 已建立不含真實密碼的 `.env.example`；`.gitignore` 使用 `.env*` 與 `!.env.example`，實測 `.env` 會被忽略、`.env.example` 可被追蹤，且 `git status` 不會顯示真實 `.env`。
+- 已建立 `User`、`Record`、`AuditLog` 初始 Schema；關係使用 `userId` Foreign Key 與 `onDelete: Cascade`。
+- `npx prisma db pull` 曾回報 `P4001: The introspected database was empty`；這表示當時連線成功但資料庫尚無 Table，並非 PostgreSQL 連線失敗。
+- 已成功執行 `npx prisma format`。
+- 已成功執行 `npx prisma migrate dev --name init`，建立 `prisma/migrations/20260810110544_init/migration.sql` 並套用資料庫。
+- pgAdmin 已確認 `User`、`Record`、`AuditLog` 與 `_prisma_migrations` Tables 存在。
+- 已成功執行 `npx prisma generate`，將 Prisma Client 產生至 `src/generated/prisma`。
+- 已建立 `src/lib/prisma.ts`，使用 `PrismaClient`、`PrismaPg`、`DATABASE_URL` 與 `globalThis` singleton，避免 Next.js 開發環境 Hot Reload 重複建立大量連線。
+- 本次重新執行 `prisma validate` 成功；`prisma migrate status` 確認 `personal_data_management_dev` 位於 `localhost:5432`、找到 1 個 Migration，且 Database Schema 已是最新。
+- `npm.cmd run lint` 與 `npm.cmd run build` 已於 2026-08-12 再次通過；Next.js Production Build 正常。
+- 已建立並推送 Git tag `v2-stage-1`，指向 commit `923978164e1a333cfc5eb54024e18b1374f3e9e6`，tag 訊息為「完成 v2 第 1 階段 PostgreSQL 與 Prisma 基礎」。
+
+#### npm 安全性處理紀錄
+
+- 套件安裝後曾有 6 個 high severity vulnerabilities。
+- 已執行 `npm audit` 與非破壞性的 `npm audit fix`，未使用 `npm audit fix --force`，避免未評估的 major／dependency range 變更造成相容性問題。
+- 已審核並允許必要 install scripts：`@prisma/engines`、`prisma`、`esbuild`、`sharp`、`unrs-resolver`。
+- 2026-08-12 重新執行 `npm audit`，目前仍有 3 個 high severity vulnerabilities，來源為 Next.js 依賴的 PostCSS 與 sharp；此風險已記錄，後續正常套件更新時重新檢查，不阻塞第 1 階段完成。
+
+#### Vercel Deployment Debug 紀錄
+
+- 第一次推送 Prisma 基礎後，Vercel Production Build 曾失敗，錯誤為 `Cannot find module '@/generated/prisma/client'`。
+- 原因是本機曾手動執行 `prisma generate`，但 Vercel 使用乾淨 Build Environment，初始安裝流程沒有產生被 Git 忽略的 Prisma Client。
+- 已在 `package.json` 新增 `"postinstall": "prisma generate"`，使部署流程在 `npm install` 後先產生 Prisma Client，再執行 build。
+- 重新推送後，Vercel Build Logs 已確認 Prisma Client 產生、編譯成功、Build Completed 與 Deployment completed。
+- 2026-08-12 再次開啟公開網址 `https://personal-data-management.vercel.app`，回應 HTTP 200 且首頁正常顯示。
 
 ### v2 第 2 階段：註冊、登入與登出
+
+狀態：**尚未開始**。
 
 完成條件：
 
@@ -372,12 +441,12 @@
 
 ## 11. 目前進度
 
-更新日期：2026-08-07（Asia/Taipei）
+更新日期：2026-08-12（Asia/Taipei）
 
 | 版本 | 狀態 | 說明 |
 | --- | --- | --- |
 | 第一版 v1 | 已完成 | Next.js 骨架、首頁、lint、build、GitHub 首次推送、本機與遠端同步、Vercel Production Deployment 及公開首頁 smoke test 均已完成。 |
-| 第二版 v2 | 開發中 | v2 第 0 階段技術決策已完成；v2 第 1 階段尚未開始，PostgreSQL、Prisma、帳號驗證、CRUD、資料隔離、輸入驗證、錯誤處理、操作紀錄及測試均尚未實作。 |
+| 第二版 v2 | 開發中 | v2 第 0 階段技術決策與安全邊界已完成；v2 第 1 階段 PostgreSQL 與 Prisma 基礎已完成；v2 第 2 階段帳號驗證尚未開始。 |
 
 ### 環境檢查紀錄
 
@@ -385,13 +454,16 @@
 - 專案路徑：`D:\Projects\動態網站\personal-data-management`
 - Node.js：`v24.18.0`
 - npm：`11.16.0`；PowerShell 執行原則會攔截 `npm.ps1`，因此使用 `npm.cmd` 與 `npx.cmd`，未修改系統安全設定。
-- Git：實際檢查版本為 `2.53.0.windows.3`。
-- Visual Studio Code：`1.129.0`
-- Next.js：`16.2.10`
+- Git：`2.55.0.windows.3`
+- Visual Studio Code：`1.132.0`
+- Next.js：`16.2.11`
 - React／React DOM：`19.2.4`
 - TypeScript：`5.9.3`（`package.json` 宣告 `^5`）
 - ESLint：`9.39.5`（`package.json` 宣告 `^9`）
 - Tailwind CSS：`4.3.2`（`package.json` 宣告 `^4`）
+- PostgreSQL：`18.4`，Windows 服務 `postgresql-x64-18` 正常執行，Port `5432`。
+- PostgreSQL 安裝位置：`D:\PostgreSQL\18`；Data Directory：`D:\PostgreSQL\18\data`。
+- Prisma CLI／Client／PostgreSQL Adapter：`7.9.1`。
 - 工作區已由 OneDrive 搬移至本機路徑 `D:\Projects\動態網站`，專案建立於此路徑下。
 
 ### 第一版 v1 本機驗證結果
@@ -417,11 +489,30 @@
 - 公開網址：`https://personal-data-management.vercel.app`
 - 已實際開啟公開網址，首頁 smoke test 通過。
 
+### 第二版 v2 第 0～1 階段 Git 與部署狀態
+
+本次文件修改前的 Repository 狀態：
+
+- `HEAD`、`main`、`origin/main` 與 tag `v2-stage-1` 的 peeled commit 均為 `923978164e1a333cfc5eb54024e18b1374f3e9e6`。
+- 最新 commit message：`chore: 補充環境變數範例與 Git 忽略規則`。
+- `main` 與 `origin/main` 同步，工作樹在本次計畫書修改前為 clean。
+- tag `v2-stage-0` 指向 commit `aca8047b64d9da396a424068c21d9c7a585e1a08`，訊息為「完成 v2 第 0 階段技術決策與安全邊界」。
+- tag `v2-stage-1` 指向 commit `923978164e1a333cfc5eb54024e18b1374f3e9e6`，訊息為「完成 v2 第 1 階段 PostgreSQL 與 Prisma 基礎」。
+- Vercel Production 已在加入 `postinstall` 修正後成功完成乾淨建置與部署。
+- 2026-08-12 公開網址再次驗證為 HTTP 200，首頁正常顯示。
+
+### 第二版 v2 階段狀態
+
+| 階段 | 狀態 | 已完成／下一步 |
+| --- | --- | --- |
+| v2 第 0 階段 | 已完成 | 技術選型、安全邊界、概念資料模型、權限原則與開發順序已確認；tag `v2-stage-0` 已建立並推送。 |
+| v2 第 1 階段 | 已完成 | PostgreSQL、Prisma、初始 Schema／Migration、Prisma Client、共用 Client、環境變數與 Git 安全、lint／build、Vercel Production 驗證均完成；tag `v2-stage-1` 已建立並推送。 |
+| v2 第 2 階段 | 尚未開始 | Better Auth、資料庫 Session、註冊、登入與登出均尚未實作。 |
+
 ### 第二版 v2 尚未完成項目
 
-- v2 第 0 階段已完成，v2 第 1 階段尚未開始。
-- 尚未安裝 PostgreSQL、Prisma、Better Auth、Zod、Vitest 或 Playwright。
-- 尚未建立資料庫、`.env.local`、`.env.example`、Prisma Schema、Migration、帳號驗證、API、CRUD、資料隔離、操作紀錄或測試。
+- 尚未安裝或實作 Better Auth、Zod、Vitest 或 Playwright。
+- 尚未建立 Better Auth／Session Schema、註冊、登入、登出、業務 API、CRUD、資料隔離、操作紀錄或測試。
 - 雲端 PostgreSQL 供應商仍為待決策，預定於 v2 第 9 階段評估。
 
 ## 12. 重要技術決策紀錄
@@ -446,7 +537,12 @@
 | 2026-08-07 | 輸入驗證採 Zod 穩定版 | 前端驗證改善體驗，伺服器端 Zod 驗證是進入業務邏輯與資料庫前的必要檢查。 |
 | 2026-08-07 | 確定 Server Components、Server Actions 與 Route Handlers 分工 | Server Components 負責讀取，Server Actions 負責網站內部異動，Route Handlers 只處理 Better Auth 與必要 HTTP API，不建立重複的 `/api/records` CRUD。 |
 | 2026-08-07 | 測試採階段性人工驗證、Vitest 與 Playwright | 每階段執行人工驗證、lint、build；v2 第 8 階段以 Vitest 測試 Schema／純邏輯，以 Playwright 測試主要流程與越權情境。 |
-| 2026-08-07 | 確定機密資料與 Git 安全規則 | 本機機密只放 `.env.local`、Repository 只提供無真實值的 `.env.example`、正式機密放 Vercel Environment Variables，並落實資料擁有權及錯誤訊息安全。 |
+| 2026-08-07 | 確定機密資料與 Git 安全規則 | 本機機密不得提交 Git、Repository 只提供無真實值的 `.env.example`、正式機密放 Vercel Environment Variables，並落實資料擁有權及錯誤訊息安全；實際環境檔格式於第 1 階段依 Prisma 7 確認。 |
+| 2026-08-12 | v2 第 1 階段採 PostgreSQL 18.4 與 Prisma 7.9.1 完成落地 | 已建立本機開發資料庫、初始 Schema、Migration、Prisma Client 與共用 singleton Client，並以 Prisma migration status 確認資料庫為最新。 |
+| 2026-08-12 | Prisma 7 本機環境採 `.env` 與 `prisma.config.ts` | 這是目前實際實作；`.env` 受 Git 忽略，Repository 僅追蹤不含真實值的 `.env.example`，不強制改回原規劃的 `.env.local`。 |
+| 2026-08-12 | Vercel 安裝流程加入 `postinstall: prisma generate` | Prisma Client 產物受 Git 忽略，乾淨部署環境必須在安裝後自動產生，避免 `Cannot find module '@/generated/prisma/client'`。 |
+| 2026-08-12 | 保留 3 個已記錄的 high severity audit 風險 | 已執行非破壞性 `npm audit fix`，未使用 `--force`；後續正常套件更新時再評估 PostCSS 與 sharp 上游修正。 |
+| 2026-08-12 | v2 第 1 階段標記為完成 | lint、build、Prisma validate、migration status、Git 同步、tag 與 Vercel Production 均已驗證；Better Auth 留待第 2 階段。 |
 
 ## 13. 測試、啟動與公開網址
 
@@ -458,6 +554,8 @@ npm.cmd --version
 npm.cmd run dev
 npm.cmd run lint
 npm.cmd run build
+.\node_modules\.bin\prisma.cmd validate
+.\node_modules\.bin\prisma.cmd migrate status
 ```
 
 - 本機開發網址：`http://localhost:3000`
