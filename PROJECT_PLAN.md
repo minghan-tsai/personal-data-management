@@ -188,7 +188,7 @@
 
 第一版 v1 只建立 `/` 首頁。登入與註冊只顯示無功能的預留按鈕，不建立對應頁面或驗證流程。其餘路徑屬於第二版 v2 MVP。
 
-v2 第 2 階段完成當時，`/records` 僅作為驗證登入狀態的 Protected Page；v2 第 3 階段已將該頁擴充為使用 `new-record-form.tsx` 新增 Record，以及顯示目前登入使用者限定的 Record 列表。實際未建立 `/records/new`，其餘資料管理頁面仍留待後續階段。
+v2 第 2 階段完成當時，`/records` 僅作為驗證登入狀態的 Protected Page；v2 第 3 階段已將該頁擴充為使用 `new-record-form.tsx` 新增 Record，以及顯示目前登入使用者限定的 Record 列表，並維持未建立 `/records/new`。v2 第 4 階段已新增 `/records/[id]` 詳細頁與 `/records/[id]/edit` 修改頁，並完成 Record 查看、修改與刪除功能。
 
 ## 8. 第二版 v2 資料模型
 
