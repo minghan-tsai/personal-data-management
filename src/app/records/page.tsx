@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { LogoutButton } from "@/app/records/logout-button";
 import { NewRecordForm } from "@/app/records/new-record-form";
@@ -9,8 +10,13 @@ export const metadata: Metadata = {
   title: "資料列表｜個人資料管理系統",
 };
 
-export default async function RecordsPage() {
+export default async function RecordsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ deleted?: string | string[] }>;
+}) {
   const session = await requireServerSession();
+  const { deleted } = await searchParams;
   const records = await prisma.record.findMany({
     where: {
       userId: session.user.id,
@@ -44,6 +50,12 @@ export default async function RecordsPage() {
         </section>
 
         <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/60 sm:p-10">
+          {deleted === "1" ? (
+            <p className="mb-6 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700" role="status">
+              資料已刪除。
+            </p>
+          ) : null}
+
           <div className="flex items-end justify-between gap-4">
             <div>
               <h2 className="text-2xl font-bold tracking-tight text-slate-950">資料列表</h2>
@@ -60,7 +72,11 @@ export default async function RecordsPage() {
             <ul className="mt-6 space-y-4">
               {records.map((record) => (
                 <li className="rounded-2xl border border-slate-200 p-5" key={record.id}>
-                  <h3 className="text-lg font-bold text-slate-950">{record.title}</h3>
+                  <h3 className="text-lg font-bold text-slate-950">
+                    <Link className="transition hover:text-blue-700 hover:underline" href={`/records/${record.id}`}>
+                      {record.title}
+                    </Link>
+                  </h3>
                   <p className="mt-2 whitespace-pre-wrap leading-7 text-slate-600">
                     {record.content || "（無內容）"}
                   </p>
@@ -75,6 +91,12 @@ export default async function RecordsPage() {
                       timeZone: "Asia/Taipei",
                     }).format(record.createdAt)}
                   </time>
+                  <Link
+                    className="mt-4 inline-block text-sm font-semibold text-blue-700 hover:underline"
+                    href={`/records/${record.id}`}
+                  >
+                    查看詳細資料
+                  </Link>
                 </li>
               ))}
             </ul>

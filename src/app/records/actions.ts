@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 import { prisma } from "@/lib/prisma";
 import { requireServerSession } from "@/lib/session";
@@ -13,17 +14,40 @@ export type CreateRecordState = {
   message: string;
 };
 
-export async function createRecord(
-  _previousState: CreateRecordState,
-  formData: FormData,
-): Promise<CreateRecordState> {
-  const session = await requireServerSession();
+export type UpdateRecordState = CreateRecordState;
+export type DeleteRecordState = CreateRecordState;
+
+type RecordInputResult =
+  | {
+      data: {
+        title: string;
+        content: string | null;
+      };
+    }
+  | {
+      message: string;
+    };
+
+function validateRecordId(recordId: unknown) {
+  if (typeof recordId !== "string") {
+    return null;
+  }
+
+  const normalizedRecordId = recordId.trim();
+
+  if (!normalizedRecordId || normalizedRecordId.length > 100) {
+    return null;
+  }
+
+  return normalizedRecordId;
+}
+
+function validateRecordInput(formData: FormData): RecordInputResult {
   const titleValue = formData.get("title");
   const contentValue = formData.get("content");
 
   if (typeof titleValue !== "string" || typeof contentValue !== "string") {
     return {
-      status: "error",
       message: "資料格式不正確，請重新輸入。",
     };
   }
@@ -33,29 +57,47 @@ export async function createRecord(
 
   if (!title) {
     return {
-      status: "error",
       message: "標題不可為空白。",
     };
   }
 
   if (title.length > TITLE_MAX_LENGTH) {
     return {
-      status: "error",
       message: `標題不可超過 ${TITLE_MAX_LENGTH} 個字元。`,
     };
   }
 
   if (content.length > CONTENT_MAX_LENGTH) {
     return {
-      status: "error",
       message: `內容不可超過 ${CONTENT_MAX_LENGTH} 個字元。`,
+    };
+  }
+
+  return {
+    data: {
+      title,
+      content: content || null,
+    },
+  };
+}
+
+export async function createRecord(
+  _previousState: CreateRecordState,
+  formData: FormData,
+): Promise<CreateRecordState> {
+  const session = await requireServerSession();
+  const input = validateRecordInput(formData);
+
+  if ("message" in input) {
+    return {
+      status: "error",
+      message: input.message,
     };
   }
 
   await prisma.record.create({
     data: {
-      title,
-      content: content || null,
+      ...input.data,
       userId: session.user.id,
     },
   });
@@ -66,4 +108,100 @@ export async function createRecord(
     status: "success",
     message: "資料已新增。",
   };
+}
+
+export async function updateRecord(
+  recordId: string,
+  _previousState: UpdateRecordState,
+  formData: FormData,
+): Promise<UpdateRecordState> {
+  const session = await requireServerSession();
+  const normalizedRecordId = validateRecordId(recordId);
+  const input = validateRecordInput(formData);
+
+  if (!normalizedRecordId) {
+    return {
+      status: "error",
+      message: "找不到資料或無權執行此操作。",
+    };
+  }
+
+  if ("message" in input) {
+    return {
+      status: "error",
+      message: input.message,
+    };
+  }
+
+  try {
+    const result = await prisma.record.updateMany({
+      where: {
+        id: normalizedRecordId,
+        userId: session.user.id,
+      },
+      data: input.data,
+    });
+
+    if (result.count !== 1) {
+      return {
+        status: "error",
+        message: "找不到資料或無權執行此操作。",
+      };
+    }
+  } catch {
+    return {
+      status: "error",
+      message: "目前無法儲存修改，請稍後再試。",
+    };
+  }
+
+  revalidatePath("/records");
+  revalidatePath(`/records/${normalizedRecordId}`);
+  revalidatePath(`/records/${normalizedRecordId}/edit`);
+
+  return {
+    status: "success",
+    message: "資料已更新。",
+  };
+}
+
+export async function deleteRecord(
+  recordId: string,
+  _previousState: DeleteRecordState,
+): Promise<DeleteRecordState> {
+  void _previousState;
+
+  const session = await requireServerSession();
+  const normalizedRecordId = validateRecordId(recordId);
+
+  if (!normalizedRecordId) {
+    return {
+      status: "error",
+      message: "找不到資料或無權執行此操作。",
+    };
+  }
+
+  try {
+    const result = await prisma.record.deleteMany({
+      where: {
+        id: normalizedRecordId,
+        userId: session.user.id,
+      },
+    });
+
+    if (result.count !== 1) {
+      return {
+        status: "error",
+        message: "找不到資料或無權執行此操作。",
+      };
+    }
+  } catch {
+    return {
+      status: "error",
+      message: "目前無法刪除資料，請稍後再試。",
+    };
+  }
+
+  revalidatePath("/records");
+  redirect("/records?deleted=1");
 }
