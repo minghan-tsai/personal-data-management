@@ -168,8 +168,8 @@
 - Repository 只提供不含真實值的 `.env.example`。
 - 正式環境機密存放於 Vercel Environment Variables。
 - 每次新增環境設定後，確認 `git status` 與 `git check-ignore`。
-- `ownerId` 只能由伺服器根據 Session 決定，不接受前端指定。
-- 查看、修改、刪除資料時，同時檢查 `recordId` 與目前登入者 `ownerId`。
+- `userId` 只能由伺服器根據 Session 決定，不接受前端指定；ownership／owner 僅用來描述資料擁有權概念。
+- 查看、修改、刪除資料時，必須在伺服器端同時使用 `recordId` 與目前登入者的 `userId` 執行授權查詢。
 - 錯誤訊息不得洩漏帳號存在狀態、SQL、stack trace、系統路徑或其他內部資訊。
 - `AuditLog` 不記錄密碼、密碼雜湊、Session Token、Cookie、完整連線字串或其他機密。
 - 專案只使用虛構資料，不保存真實敏感個資。
@@ -181,15 +181,14 @@
 | `/` | 系統名稱、用途說明及登入／註冊入口 | 公開 |
 | `/register` | 註冊帳號 | 未登入使用者 |
 | `/login` | 登入 | 未登入使用者 |
-| `/records` | 自己的資料列表 | 需登入 |
-| `/records/new` | 新增資料 | 需登入 |
+| `/records` | 新增自己的資料與查看自己的資料列表；新增表單直接整合於此頁 | 需登入 |
 | `/records/[id]` | 查看單筆資料 | 僅資料擁有者 |
 | `/records/[id]/edit` | 修改資料 | 僅資料擁有者 |
 | `/activity` | 查看自己的操作紀錄 | 需登入 |
 
 第一版 v1 只建立 `/` 首頁。登入與註冊只顯示無功能的預留按鈕，不建立對應頁面或驗證流程。其餘路徑屬於第二版 v2 MVP。
 
-v2 第 2 階段已建立 `/register`、`/login` 與最小受保護頁面 `/records`；目前 `/records` 只驗證登入狀態，尚未開始 Record 列表或 CRUD。其餘資料管理頁面仍留待後續階段。
+v2 第 2 階段完成當時，`/records` 僅作為驗證登入狀態的 Protected Page；v2 第 3 階段已將該頁擴充為使用 `new-record-form.tsx` 新增 Record，以及顯示目前登入使用者限定的 Record 列表。實際未建立 `/records/new`，其餘資料管理頁面仍留待後續階段。
 
 ## 8. 第二版 v2 資料模型
 
@@ -215,7 +214,7 @@ v2 第 2 階段已建立 `/register`、`/login` 與最小受保護頁面 `/recor
 | 欄位 | 用途 |
 | --- | --- |
 | `id` | 紀錄唯一識別碼 |
-| `ownerId` | 紀錄擁有者，對應 `User.id` |
+| `ownerId` | 第 0 階段概念名稱，表示紀錄擁有者並對應 `User.id`；目前實際 Prisma 欄位為 `Record.userId` |
 | `displayName` | 虛構資料的名稱或標題 |
 | `email` | 虛構聯絡 Email |
 | `phone` | 虛構聯絡電話，可選 |
@@ -440,7 +439,7 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 
 完成條件：
 
-- 所有資料操作都在伺服器端檢查 `ownerId`。
+- 所有資料操作都在伺服器端檢查目前登入使用者的 `userId`；ownership／owner 只表示資料擁有權概念。
 - 竄改網址或紀錄 ID 不能查看、修改或刪除其他使用者資料。
 - 越權情境具有可重複測試步驟。
 
