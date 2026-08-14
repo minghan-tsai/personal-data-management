@@ -34,7 +34,7 @@ export default function Home() {
 
         <div className="mt-10 border-t border-slate-200 pt-6">
           <p className="text-sm leading-6 text-slate-500">
-            目前已進入 v2 帳號驗證階段，資料管理功能仍在後續規劃中。本作品僅使用虛構測試資料。
+            目前已完成帳號驗證、個人資料新增與列表；修改與刪除功能仍在後續規劃中。本作品僅使用虛構測試資料。
           </p>
         </div>
       </section>

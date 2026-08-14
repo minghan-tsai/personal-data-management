@@ -33,7 +33,7 @@
 
 第二版 v2 的目標是在第一版骨架與部署流程上，完成具備 PostgreSQL、Prisma、帳號驗證、個人紀錄 CRUD、使用者資料隔離、輸入驗證、錯誤處理、操作紀錄及測試的 MVP。
 
-狀態：**開發中**。v2 第 0～2 階段已完成，v2 第 3 階段尚未開始。
+狀態：**開發中**。v2 第 0～3 階段已完成，v2 第 4 階段尚未開始。
 
 第二版必須依階段執行；尚未決定的技術事項需先完成決策與記錄，不在計畫階段擅自選定。
 
@@ -313,7 +313,7 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 
 ## 10. 第二版 v2 分階段執行順序
 
-第二版 v2 已進入開發流程，v2 第 0～2 階段已完成，v2 第 3 階段尚未開始。以下階段必須依序進行；每階段開始前先說明目的，完成後記錄修改檔案、主要程式碼、啟動方式與測試結果。
+第二版 v2 已進入開發流程，v2 第 0～3 階段已完成，v2 第 4 階段尚未開始。以下階段必須依序進行；每階段開始前先說明目的，完成後記錄修改檔案、主要程式碼、啟動方式與測試結果。
 
 ### v2 第 0 階段：確認待決策事項與安全邊界
 
@@ -382,7 +382,7 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 - 已新增 `src/lib/auth.ts` 作為 Better Auth Server 設定、`src/lib/auth-client.ts` 作為 Browser Client，以及 `src/lib/session.ts` 共用伺服器端 Session 取得與保護邏輯。
 - 已新增 Better Auth Route Handler `src/app/api/auth/[...all]/route.ts`，本階段未建立 `/api/records` 或其他 Record CRUD API。
 - 已新增 `/register`、`/login`，以及作為最小 Protected Page 的 `/records`。
-- `/records` 未登入時會 redirect 至 `/login`；登入後由 Server Component 驗證 Database Session。該頁尚未查詢或建立 Record，也未開始 Record 列表或 CRUD。
+- `/records` 未登入時會 redirect 至 `/login`；登入後由 Server Component 驗證 Database Session。第 2 階段完成當時該頁只作為 Session 驗證入口，尚未查詢或建立 Record；Record 新增與列表已於第 3 階段完成。
 - 登入與註冊頁面均已加入顯示／隱藏密碼按鈕及固定導向 `/` 的返回首頁連結。
 - 已完成正常註冊、重複 Email、正確登入、錯誤密碼、不存在帳號、未登入直接存取 `/records`、登出及登出後再次存取等人工驗證。
 - 已確認 User 與 credential Account 會寫入 PostgreSQL，`accountId`、`providerId`、`userId` 與關聯符合 Better Auth 需求。
@@ -406,7 +406,23 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 
 ### v2 第 3 階段：新增與列表
 
-完成條件：
+狀態：**已完成**（2026-08-14）。
+
+完成結果：
+
+- 沿用既有 `Record.title`、`Record.content`、`Record.userId` 與 `User -> Record[]` 關聯，未修改 Prisma Schema、未新增或修改 Migration。
+- 新增 `src/app/records/actions.ts`，以 Server Action 處理 Record 建立；每次操作都先呼叫 `requireServerSession()`，並只使用 `session.user.id` 寫入 `Record.userId`，不接受 Form、URL 或 Client 提供使用者 ID。
+- 新增 `src/app/records/new-record-form.tsx`，使用 React `useActionState` 顯示送出中、成功與錯誤狀態；成功後清空表單，未建立重複的 `/api/records` API。
+- Server Action 對不受信任的 `FormData` 執行第 3 階段最小伺服器端驗證：`title` 與 `content` 必須是字串、標題 trim 後不可為空、標題最多 120 字元、內容最多 2,000 字元。HTML `required`／`maxLength` 僅作為 UX 補充；完整 Zod Schema 仍留待第 7 階段。
+- `/records` 維持 Server Component，先以 `requireServerSession()` 驗證 Database Session，再由 Prisma 使用 `where: { userId: session.user.id }` 在 Database Query 層限制資料範圍，並依 `createdAt` 由新到舊排列。
+- 列表已顯示 Record 標題、內容與建立時間；沒有資料時顯示「目前還沒有資料。」。
+- 人工驗收使用兩個全新虛構帳號：User A 建立 A1 後可看到 A1；User B 登入後看不到 A1、建立 B1 後只看到 B1；User A 重新登入後仍看到 A1且看不到 B1。另由 Prisma 查詢確認 A1／B1 的 `userId` 均與各自 User ID 相符。
+- 已確認空白標題會被 Server Action 拒絕；登出後直接存取 `/records` 會 redirect 至 `/login`。
+- 驗收用虛構帳號與 Record 已於確認結果後清理，未建立或保留臨時 debug script。
+- `prisma validate`、`prisma migrate status`、`npm.cmd run lint`、`npm.cmd run build` 與 `git diff --check` 均已通過。
+- 本階段只完成 Record 新增與目前使用者列表；Record 詳細頁、修改、刪除、完整 ID 型越權測試、AuditLog、Zod、Vitest 與 Playwright 均未開始。
+
+原完成條件：
 
 - 登入者可新增經驗證的虛構資料紀錄。
 - 列表只顯示目前登入者的資料。
@@ -468,12 +484,12 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 
 ## 11. 目前進度
 
-更新日期：2026-08-12（Asia/Taipei）
+更新日期：2026-08-14（Asia/Taipei）
 
 | 版本 | 狀態 | 說明 |
 | --- | --- | --- |
 | 第一版 v1 | 已完成 | Next.js 骨架、首頁、lint、build、GitHub 首次推送、本機與遠端同步、Vercel Production Deployment 及公開首頁 smoke test 均已完成。 |
-| 第二版 v2 | 開發中 | v2 第 0 階段技術決策與安全邊界、第 1 階段 PostgreSQL 與 Prisma 基礎、第 2 階段 Better Auth 與 Database Session 均已完成；v2 第 3 階段尚未開始。 |
+| 第二版 v2 | 開發中 | v2 第 0 階段技術決策與安全邊界、第 1 階段 PostgreSQL 與 Prisma 基礎、第 2 階段 Better Auth 與 Database Session、第 3 階段 Record 新增與列表均已完成；v2 第 4 階段尚未開始。 |
 
 ### 環境檢查紀錄
 
@@ -518,12 +534,13 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 - 公開網址：`https://personal-data-management.vercel.app`
 - 已實際開啟公開網址，首頁 smoke test 通過。
 
-### 第二版 v2 第 0～2 階段 Git 與部署狀態
+### 第二版 v2 第 0～3 階段 Git 與部署狀態
 
 - v2 第 2 階段正式收尾完成後，`main` 與 `origin/main` 同步，並以 annotated tag `v2-stage-2` 標記 Better Auth 與 Database Session 完成狀態。
 - tag `v2-stage-0` 指向 commit `aca8047b64d9da396a424068c21d9c7a585e1a08`，訊息為「完成 v2 第 0 階段技術決策與安全邊界」。
 - tag `v2-stage-1` 指向 commit `923978164e1a333cfc5eb54024e18b1374f3e9e6`，訊息為「完成 v2 第 1 階段 PostgreSQL 與 Prisma 基礎」。
 - tag `v2-stage-2` 訊息為「完成 v2 第 2 階段 Better Auth 與 Database Session」。
+- v2 第 3 階段以 annotated tag `v2-stage-3` 標記 Record 新增與列表完成狀態，並於本階段收尾推送至遠端。
 - Vercel Production 已在加入 `postinstall` 修正後成功完成乾淨建置與部署。
 - 2026-08-12 公開網址再次驗證為 HTTP 200，首頁正常顯示。
 - v2 第 2 階段 production build 已在本機通過；正式環境 Auth 尚未配置雲端 PostgreSQL，因此 Production Auth／Database 流程尚未驗證，保留至 v2 第 9 階段。
@@ -535,12 +552,13 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 | v2 第 0 階段 | 已完成 | 技術選型、安全邊界、概念資料模型、權限原則與開發順序已確認；tag `v2-stage-0` 已建立並推送。 |
 | v2 第 1 階段 | 已完成 | PostgreSQL、Prisma、初始 Schema／Migration、Prisma Client、共用 Client、環境變數與 Git 安全、lint／build、Vercel Production 驗證均完成；tag `v2-stage-1` 已建立並推送。 |
 | v2 第 2 階段 | 已完成 | Better Auth、Prisma Adapter、Auth Schema／Migration、Database Session、註冊、登入、登出、最小 Protected Page、人工驗證及 lint／build 均完成；tag `v2-stage-2` 已建立並推送。 |
-| v2 第 3 階段 | 尚未開始 | Record 新增與列表尚未實作。 |
+| v2 第 3 階段 | 已完成 | Record Server Action 新增、目前使用者限定列表、最小伺服器端驗證、A／B 資料隔離人工驗收及 lint／build 均完成；tag `v2-stage-3` 於本階段收尾建立並推送。 |
+| v2 第 4 階段 | 尚未開始 | Record 詳細頁、修改與刪除尚未實作。 |
 
 ### 第二版 v2 尚未完成項目
 
 - Zod 尚未安裝，完整伺服器端輸入驗證與一致錯誤處理留待 v2 第 7 階段。
-- Record CRUD 與完整使用者資料隔離尚未實作，v2 第 3 階段尚未開始。
+- Record 新增與目前使用者限定列表已完成；Record 詳細頁、修改、刪除與以 Record ID 驗證的完整授權仍未實作，留待 v2 第 4～5 階段。
 - `AuditLog` 實際操作紀錄尚未實作。
 - Vitest 與 Playwright 尚未安裝或建立測試，留待 v2 第 8 階段。
 - 雲端 PostgreSQL 供應商仍為待決策，正式環境 Auth／Database 驗證預定於 v2 第 9 階段處理。
@@ -577,6 +595,9 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 | 2026-08-12 | v2 第 2 階段完成 Database Session 與伺服器端驗證 | Session 儲存於 PostgreSQL `session` Table；受保護頁面使用 `auth.api.getSession(...)` 驗證有效 Session，Cookie 存在本身不代表登入成功。 |
 | 2026-08-12 | credential hash 改存於 `Account.password` | 依 Better Auth 官方模型移除 `User.password`，使用 Better Auth 預設 hash，不保存明文密碼，並保留 `User -> Record`、`User -> AuditLog` 關聯。 |
 | 2026-08-12 | v2 第 2 階段標記為完成 | Auth Schema／Migration、註冊、登入、登出、最小 Protected Page、人工驗收、Prisma 檢查、lint 與 production build 均已完成；Record CRUD 留待第 3 階段。 |
+| 2026-08-14 | v2 第 3 階段沿用既有 `Record.title`／`Record.content` | 既有 Schema 已足以完成新增與列表，因此不修改 Schema 或 Migration；Record owner 一律由 Server Action 的有效 Session 決定。 |
+| 2026-08-14 | Record 讀寫在 Database Query 層依使用者隔離 | 建立時使用 `session.user.id` 寫入 `userId`，列表使用 `where: { userId: session.user.id }`；A／B 虛構帳號人工驗收與 Prisma ownership 查詢均通過。 |
+| 2026-08-14 | v2 第 3 階段標記為完成 | Server Action、新增表單、目前使用者 Record 列表、最小伺服器端驗證、Prisma 檢查、lint、production build 與資料隔離驗收均已完成；詳細頁、修改與刪除留待第 4 階段。 |
 
 ## 13. 測試、啟動與公開網址
 
