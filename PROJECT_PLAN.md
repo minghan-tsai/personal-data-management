@@ -91,9 +91,9 @@
 | 密碼雜湊方案 | Better Auth 預設方案（已實作） | credential hash 儲存於 `Account.password`；不自行發明密碼演算法或增加第二層雜湊，資料庫不保存明文密碼。 |
 | 欄位驗證函式庫 | Zod 穩定版（已決策、尚未安裝） | 所有外部輸入都必須經過伺服器端執行時驗證。 |
 | 後端操作方式 | Server Components、Server Actions、Route Handlers 分工 | 讀取、網站內部異動及必要 HTTP API 各自使用對應機制，不重複建立 `/api/records` CRUD。 |
-| 測試策略 | 單元與整合／流程測試為主 | 每階段先執行人工驗證、lint 與 build；後續逐步加入 Vitest 與 Playwright，相關套件尚未安裝。 |
+| 測試與 CI | 單元與整合／流程測試、GitHub Actions CI | 每階段先執行人工驗證、lint 與 build；v2 第 8 階段加入 Vitest、Playwright 與 GitHub Actions 自動檢查，目前相關套件與 Workflow 均尚未建立。 |
 | 套件管理 | npm | Node.js 隨附、文件普遍，適合初學者。 |
-| 部署 | Vercel（第一版已採用） | 已完成 GitHub 整合、Production Deployment 與公開網址 smoke test。 |
+| 部署／CD | Vercel Git Integration（第一版已採用） | GitHub Repository 作為版本來源，Vercel 負責乾淨環境安裝、既有 `postinstall: prisma generate`、Production Build 與 Deployment；不另建重複的 GitHub Actions CD Pipeline。 |
 | 本機 PostgreSQL 開發方式 | Windows 本機直接安裝（已完成） | PostgreSQL 18、pgAdmin 4 與 Command Line Tools 已安裝於 D 槽，開發資料庫已建立。 |
 | 雲端資料庫供應商 | 待決策 | v2 第 9 階段再比較 Neon、Supabase、Prisma Postgres 或其他託管 PostgreSQL。 |
 
@@ -161,6 +161,9 @@
 - v2 第 8 階段規劃採 Vitest 測試 Zod Schema 與純邏輯。
 - v2 第 8 階段規劃採 Playwright 測試註冊、登入、CRUD 與越權情境。
 - 不以覆蓋率數字為主要目標，優先測試登入、資料異動與使用者資料隔離。
+- v2 第 8 階段規劃建立 GitHub Actions CI，Repository 程式碼更新後自動執行 lint、Vitest，以及 Playwright 或適合 CI 環境的主要流程測試。
+- TypeScript／production build 是否在同一 CI Workflow 執行，應依第 8 階段實際設計與既有建置流程決定，避免沒有必要的重複；CI 失敗時必須能從 GitHub Actions 清楚辨識失敗步驟。
+- GitHub Actions Workflow 尚未建立，留待 v2 第 8 階段實作。
 
 #### 9. 機密資料與 Git 安全規則
 
@@ -173,6 +176,13 @@
 - 錯誤訊息不得洩漏帳號存在狀態、SQL、stack trace、系統路徑或其他內部資訊。
 - `AuditLog` 不記錄密碼、密碼雜湊、Session Token、Cookie、完整連線字串或其他機密。
 - 專案只使用虛構資料，不保存真實敏感個資。
+
+#### 10. CI／CD 責任分工
+
+- GitHub Actions 負責 CI；實際 Workflow 留待 v2 第 8 階段建立，不在目前階段提前實作。
+- Vercel Git Integration 負責 CD／Deployment，GitHub Repository 作為版本來源；Vercel 在乾淨環境安裝套件、執行既有 `postinstall: prisma generate`、Production Build 與 Deployment。
+- 本專案不另外建立 GitHub Actions Deployment Pipeline，避免與 Vercel Git Integration 重複。
+- 正式環境 Environment Variables、雲端 PostgreSQL 供應商與 Production Auth／Database 驗證仍留待 v2 第 9 階段。
 
 ## 7. 頁面規劃
 
@@ -478,7 +488,7 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 - 常見錯誤有一致且不洩漏系統細節的訊息。
 - 操作成功、驗證失敗、查無資料及無權存取均有清楚提示。
 
-### v2 第 8 階段：測試
+### v2 第 8 階段：測試與 CI
 
 完成條件：
 
@@ -487,6 +497,9 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 - 不以覆蓋率數字為主要目標，優先覆蓋登入、資料異動與使用者資料隔離。
 - 主要測試可重複執行，測試資料只使用虛構內容。
 - lint、TypeScript 與 production build 均通過。
+- 建立 GitHub Actions CI，使 Repository 程式碼更新後可自動執行 lint、Vitest，以及 Playwright 或適合 CI 環境的主要流程測試。
+- 依實際 CI 設計決定 TypeScript／production build 檢查的執行位置，避免與既有流程沒有必要地重複，並讓 Workflow 中各檢查步驟及失敗原因清楚可辨識。
+- 本階段只建立 CI，不建立 GitHub Actions CD／Deployment Pipeline。
 
 ### v2 第 9 階段：文件與正式環境驗證
 
@@ -495,7 +508,8 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 - README 包含系統說明、安裝、啟動及測試方式。
 - 建立只含虛構資料的測試帳號。
 - 完成雲端 PostgreSQL 供應商決策與正式環境設定。
-- 將第二版 MVP 部署至 Vercel 並完成正式環境測試。
+- 延續 GitHub Repository → Vercel Git Integration 的既有 CD 流程，由 Vercel 執行乾淨環境安裝、`postinstall: prisma generate`、Production Build 與 Deployment，不另建 GitHub Actions CD Pipeline。
+- 將第二版 MVP 部署至 Vercel 並完成正式環境測試；正式 Environment Variables、雲端 PostgreSQL 與 Production Auth／Database 驗證均在本階段完成。
 - 文件不包含資料庫密碼、Session Secret 或其他機密。
 
 ## 11. 目前進度
@@ -578,7 +592,7 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 - Zod 尚未安裝，完整伺服器端輸入驗證與一致錯誤處理留待 v2 第 7 階段。
 - Record 新增、列表、詳細頁、修改與刪除已完成，所有目前操作均使用 Server Session 的 `userId`；完整跨帳號 Record ID 越權測試與可重複測試步驟仍留待 v2 第 5 階段。
 - `AuditLog` 實際操作紀錄尚未實作。
-- Vitest 與 Playwright 尚未安裝或建立測試，留待 v2 第 8 階段。
+- Vitest 與 Playwright 尚未安裝或建立測試，GitHub Actions CI Workflow 亦尚未建立，均留待 v2 第 8 階段「測試與 CI」。
 - 雲端 PostgreSQL 供應商仍為待決策，正式環境 Auth／Database 驗證預定於 v2 第 9 階段處理。
 
 ## 12. 重要技術決策紀錄
@@ -618,6 +632,7 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 | 2026-08-14 | v2 第 3 階段標記為完成 | Server Action、新增表單、目前使用者 Record 列表、最小伺服器端驗證、Prisma 檢查、lint、production build 與資料隔離驗收均已完成；詳細頁、修改與刪除留待第 4 階段。 |
 | 2026-08-14 | v2 第 4 階段 Read／Update／Delete 均使用 `recordId + session.user.id` 授權 | 詳細與修改頁在 Server Component 讀取時同時限制 Record ID 與有效 Session 使用者；更新與刪除 Server Actions 以同一組條件執行 `updateMany`／`deleteMany`，不信任 Client 提供的 `userId`。 |
 | 2026-08-14 | v2 第 4 階段標記為完成 | 詳細頁、修改頁、刪除確認、統一 Not Found、成功／失敗提示、人工驗收、Prisma 檢查、lint 與 production build 均已完成；完整跨帳號越權測試留待第 5 階段。 |
+| 2026-08-15 | CI／CD 責任分工採 GitHub Actions CI 與 Vercel Git Integration CD | v2 第 8 階段建立 GitHub Actions 自動執行 lint、Vitest 與主要流程測試，並依實際設計安排 TypeScript／production build；部署沿用既有 Vercel Git Integration，不建立重複的 GitHub Actions Deployment Pipeline，正式環境資料庫與機密設定留待第 9 階段。 |
 
 ## 13. 測試、啟動與公開網址
 
