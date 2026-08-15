@@ -33,7 +33,7 @@
 
 第二版 v2 的目標是在第一版骨架與部署流程上，完成具備 PostgreSQL、Prisma、帳號驗證、個人紀錄 CRUD、使用者資料隔離、輸入驗證、錯誤處理、操作紀錄及測試的 MVP。
 
-狀態：**開發中**。v2 第 0～4 階段已完成，v2 第 5 階段尚未開始。
+狀態：**開發中**。v2 第 0～5 階段已完成，v2 第 6 階段尚未開始。
 
 第二版必須依階段執行；尚未決定的技術事項需先完成決策與記錄，不在計畫階段擅自選定。
 
@@ -322,7 +322,7 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 
 ## 10. 第二版 v2 分階段執行順序
 
-第二版 v2 已進入開發流程，v2 第 0～4 階段已完成，v2 第 5 階段尚未開始。以下階段必須依序進行；每階段開始前先說明目的，完成後記錄修改檔案、主要程式碼、啟動方式與測試結果。
+第二版 v2 已進入開發流程，v2 第 0～5 階段已完成，v2 第 6 階段尚未開始。以下階段必須依序進行；每階段開始前先說明目的，完成後記錄修改檔案、主要程式碼、啟動方式與測試結果。
 
 ### v2 第 0 階段：確認待決策事項與安全邊界
 
@@ -454,7 +454,7 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 - 使用者本人已完成人工驗收：詳細頁欄位、修改預填與儲存、`updatedAt` 更新、空白標題拒絕、刪除取消／確認、刪除成功提示、Not Found 與登出後登入保護流程均通過。
 - Prisma Schema 未修改，沒有新增或修改 Migration；未安裝 Zod、未實作 `AuditLog`、未建立 `/api/records` CRUD。
 - `prisma validate`、`prisma migrate status`、`npm.cmd run lint`、`npm.cmd run build` 與 `git diff --check` 均已通過。
-- 完整跨帳號竄改 Record ID 的查看、修改、刪除越權測試仍保留至 v2 第 5 階段；第 5 階段尚未開始。
+- 完整跨帳號竄改 Record ID 的查看、修改、刪除越權測試原保留至 v2 第 5 階段，並已於 2026-08-15 完成人工驗收。
 
 原完成條件：
 
@@ -464,7 +464,23 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 
 ### v2 第 5 階段：使用者資料隔離
 
-完成條件：
+狀態：**已完成**（2026-08-15）。
+
+完成結果：
+
+- 已重新審查所有 Record 存取入口；使用者身份一律由 `requireServerSession()` 驗證的有效 Database Session 取得，並使用 `session.user.id` 決定資料擁有者，不信任 Client、URL、FormData 或 hidden input 提供的 `userId`／owner。
+- Create Server Action 不接受 Client 指定 `userId`，建立時只將 `session.user.id` 寫入 `Record.userId`；List 使用 `where: { userId: session.user.id }`，只在 Database Query 層查詢目前登入者資料。
+- Read 與 Edit Server Components 均以 `recordId + session.user.id` 查詢；Update Server Action 使用 `updateMany`，Delete Server Action 使用 `deleteMany`，兩者都自行重新驗證 Session 並同時限制 Record ID 與 `session.user.id`。
+- 越權或查無資料均使用一般化 Record Not Found／「找不到資料或無權執行此操作」訊息，不洩漏 owner、SQL、stack trace、系統路徑或其他內部資訊；專案沒有未受控的 `/api/records` CRUD 入口。
+- 列表隔離人工驗收通過：User A 建立 `STAGE5-A1`、User B 建立 `STAGE5-B1` 後，A／B 的 `/records` 均只能看到自己的 Record，彼此看不到另一方資料。
+- 跨帳號 Read／Edit 人工驗收通過：User B 直接存取 A1 的詳細與修改網址，以及 User A 反向存取 B1 的相同網址，均只顯示一般化 Record Not Found，未洩漏 title、content、owner 或其他資料。
+- Update Server Action 越權重播通過：從 User A 合法請求取得 Action payload，移除任何 Cookie／Authorization／Session Token 後，以 User B 自己的 Session 和測試標題 `B-UNAUTHORIZED-UPDATE` 重播；A1 仍為 `STAGE5-A1`，未被 B 修改。
+- Delete Server Action 越權重播通過：先以 Offline 模式安全擷取未送達伺服器的 A1 Delete Action request，恢復 Online 後改用 User B 自己的 Session 重播；A1 仍存在且詳細頁可正常開啟，未被 B 刪除。
+- A／B 列表、網址竄改、Update Action 重播、Delete Action 重播與反向驗證均已有可重複人工步驟，且全部通過；測試過程未記錄或提交 Cookie、Session Token、credential hash 或其他機密。
+- 安全審查未發現需修正的程式碼缺口，因此本階段未修改 Record 授權程式碼、Prisma Schema、Migration、套件或環境變數，也未提前實作 `AuditLog`、Zod、測試框架或 GitHub Actions。
+- `prisma validate`、`prisma migrate status`、`npm.cmd run lint`、`npm.cmd run build` 與 `git diff --check` 均已通過。
+
+原完成條件：
 
 - 所有資料操作都在伺服器端檢查目前登入使用者的 `userId`；ownership／owner 只表示資料擁有權概念。
 - 竄改網址或紀錄 ID 不能查看、修改或刪除其他使用者資料。
@@ -514,12 +530,12 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 
 ## 11. 目前進度
 
-更新日期：2026-08-14（Asia/Taipei）
+更新日期：2026-08-15（Asia/Taipei）
 
 | 版本 | 狀態 | 說明 |
 | --- | --- | --- |
 | 第一版 v1 | 已完成 | Next.js 骨架、首頁、lint、build、GitHub 首次推送、本機與遠端同步、Vercel Production Deployment 及公開首頁 smoke test 均已完成。 |
-| 第二版 v2 | 開發中 | v2 第 0 階段技術決策與安全邊界、第 1 階段 PostgreSQL 與 Prisma 基礎、第 2 階段 Better Auth 與 Database Session、第 3 階段 Record 新增與列表、第 4 階段 Record 查看、修改與刪除均已完成；v2 第 5 階段尚未開始。 |
+| 第二版 v2 | 開發中 | v2 第 0 階段技術決策與安全邊界、第 1 階段 PostgreSQL 與 Prisma 基礎、第 2 階段 Better Auth 與 Database Session、第 3 階段 Record 新增與列表、第 4 階段 Record 查看、修改與刪除、第 5 階段使用者資料隔離均已完成；v2 第 6 階段操作紀錄尚未開始。 |
 
 ### 環境檢查紀錄
 
@@ -564,7 +580,7 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 - 公開網址：`https://personal-data-management.vercel.app`
 - 已實際開啟公開網址，首頁 smoke test 通過。
 
-### 第二版 v2 第 0～4 階段 Git 與部署狀態
+### 第二版 v2 第 0～5 階段 Git 與部署狀態
 
 - v2 第 2 階段正式收尾完成後，`main` 與 `origin/main` 同步，並以 annotated tag `v2-stage-2` 標記 Better Auth 與 Database Session 完成狀態。
 - tag `v2-stage-0` 指向 commit `aca8047b64d9da396a424068c21d9c7a585e1a08`，訊息為「完成 v2 第 0 階段技術決策與安全邊界」。
@@ -572,6 +588,7 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 - tag `v2-stage-2` 訊息為「完成 v2 第 2 階段 Better Auth 與 Database Session」。
 - v2 第 3 階段以 annotated tag `v2-stage-3` 標記 Record 新增與列表完成狀態，並於本階段收尾推送至遠端。
 - v2 第 4 階段以 annotated tag `v2-stage-4` 標記 Record 查看、修改與刪除完成狀態，並於本階段收尾推送至遠端。
+- v2 第 5 階段以 annotated tag `v2-stage-5` 標記使用者資料隔離與人工越權驗收完成狀態，並於本階段收尾推送至遠端。
 - Vercel Production 已在加入 `postinstall` 修正後成功完成乾淨建置與部署。
 - 2026-08-12 公開網址再次驗證為 HTTP 200，首頁正常顯示。
 - v2 第 2 階段 production build 已在本機通過；正式環境 Auth 尚未配置雲端 PostgreSQL，因此 Production Auth／Database 流程尚未驗證，保留至 v2 第 9 階段。
@@ -585,13 +602,14 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 | v2 第 2 階段 | 已完成 | Better Auth、Prisma Adapter、Auth Schema／Migration、Database Session、註冊、登入、登出、最小 Protected Page、人工驗證及 lint／build 均完成；tag `v2-stage-2` 已建立並推送。 |
 | v2 第 3 階段 | 已完成 | Record Server Action 新增、目前使用者限定列表、最小伺服器端驗證、A／B 資料隔離人工驗收及 lint／build 均完成；tag `v2-stage-3` 於本階段收尾建立並推送。 |
 | v2 第 4 階段 | 已完成 | Record 詳細頁、修改頁、Update／Delete Server Actions、刪除確認、統一 Not Found、成功／失敗狀態、人工驗收及 lint／build 均完成；tag `v2-stage-4` 於本階段收尾建立並推送。 |
-| v2 第 5 階段 | 尚未開始 | 完整跨帳號 Record ID 越權測試與可重複測試步驟尚未執行。 |
+| v2 第 5 階段 | 已完成 | A／B 列表隔離、跨帳號 Read／Edit、Update／Delete Server Action 重播及反向越權驗收均通過；所有 Record 操作以有效 Session 的 `userId` 授權；tag `v2-stage-5` 於本階段收尾建立並推送。 |
+| v2 第 6 階段 | 尚未開始 | 下一步為實作新增、修改與刪除的 `AuditLog`，並提供目前登入者的必要操作紀錄頁面。 |
 
 ### 第二版 v2 尚未完成項目
 
 - Zod 尚未安裝，完整伺服器端輸入驗證與一致錯誤處理留待 v2 第 7 階段。
-- Record 新增、列表、詳細頁、修改與刪除已完成，所有目前操作均使用 Server Session 的 `userId`；完整跨帳號 Record ID 越權測試與可重複測試步驟仍留待 v2 第 5 階段。
-- `AuditLog` 實際操作紀錄尚未實作。
+- Record 新增、列表、詳細頁、修改、刪除與伺服器端使用者資料隔離均已完成；跨帳號 Read／Edit、Update／Delete Action 重播及反向越權人工驗收均已通過。
+- `AuditLog` 實際操作紀錄尚未實作，為 v2 第 6 階段下一步。
 - Vitest 與 Playwright 尚未安裝或建立測試，GitHub Actions CI Workflow 亦尚未建立，均留待 v2 第 8 階段「測試與 CI」。
 - 雲端 PostgreSQL 供應商仍為待決策，正式環境 Auth／Database 驗證預定於 v2 第 9 階段處理。
 
@@ -633,6 +651,8 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 | 2026-08-14 | v2 第 4 階段 Read／Update／Delete 均使用 `recordId + session.user.id` 授權 | 詳細與修改頁在 Server Component 讀取時同時限制 Record ID 與有效 Session 使用者；更新與刪除 Server Actions 以同一組條件執行 `updateMany`／`deleteMany`，不信任 Client 提供的 `userId`。 |
 | 2026-08-14 | v2 第 4 階段標記為完成 | 詳細頁、修改頁、刪除確認、統一 Not Found、成功／失敗提示、人工驗收、Prisma 檢查、lint 與 production build 均已完成；完整跨帳號越權測試留待第 5 階段。 |
 | 2026-08-15 | CI／CD 責任分工採 GitHub Actions CI 與 Vercel Git Integration CD | v2 第 8 階段建立 GitHub Actions 自動執行 lint、Vitest 與主要流程測試，並依實際設計安排 TypeScript／production build；部署沿用既有 Vercel Git Integration，不建立重複的 GitHub Actions Deployment Pipeline，正式環境資料庫與機密設定留待第 9 階段。 |
+| 2026-08-15 | v2 第 5 階段以跨帳號 Action 重播驗證 Server-side ownership | 除網址竄改外，將合法 Update／Delete Server Action request 改由另一個有效使用者 Session 重播，確認 `recordId + session.user.id` 條件會阻擋跨帳號異動，且測試請求不保存或轉移原 Session 機密。 |
+| 2026-08-15 | v2 第 5 階段標記為完成 | A／B 列表隔離、雙向 Read／Edit、Update／Delete Action 重播均通過；安全審查未發現需修改的程式碼，下一步為第 6 階段 `AuditLog`。 |
 
 ## 13. 測試、啟動與公開網址
 
