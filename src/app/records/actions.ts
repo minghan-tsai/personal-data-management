@@ -9,6 +9,10 @@ import { requireServerSession } from "@/lib/session";
 const TITLE_MAX_LENGTH = 120;
 const CONTENT_MAX_LENGTH = 2000;
 
+function getRecordAuditTarget(recordId: string) {
+  return `Record:${recordId}`;
+}
+
 export type CreateRecordState = {
   status: "idle" | "error" | "success";
   message: string;
@@ -95,14 +99,32 @@ export async function createRecord(
     };
   }
 
-  await prisma.record.create({
-    data: {
-      ...input.data,
-      userId: session.user.id,
-    },
-  });
+  try {
+    await prisma.$transaction(async (transaction) => {
+      const record = await transaction.record.create({
+        data: {
+          ...input.data,
+          userId: session.user.id,
+        },
+      });
+
+      await transaction.auditLog.create({
+        data: {
+          action: "CREATE",
+          target: getRecordAuditTarget(record.id),
+          userId: session.user.id,
+        },
+      });
+    });
+  } catch {
+    return {
+      status: "error",
+      message: "目前無法新增資料，請稍後再試。",
+    };
+  }
 
   revalidatePath("/records");
+  revalidatePath("/activity");
 
   return {
     status: "success",
@@ -134,15 +156,31 @@ export async function updateRecord(
   }
 
   try {
-    const result = await prisma.record.updateMany({
-      where: {
-        id: normalizedRecordId,
-        userId: session.user.id,
-      },
-      data: input.data,
+    const wasUpdated = await prisma.$transaction(async (transaction) => {
+      const result = await transaction.record.updateMany({
+        where: {
+          id: normalizedRecordId,
+          userId: session.user.id,
+        },
+        data: input.data,
+      });
+
+      if (result.count !== 1) {
+        return false;
+      }
+
+      await transaction.auditLog.create({
+        data: {
+          action: "UPDATE",
+          target: getRecordAuditTarget(normalizedRecordId),
+          userId: session.user.id,
+        },
+      });
+
+      return true;
     });
 
-    if (result.count !== 1) {
+    if (!wasUpdated) {
       return {
         status: "error",
         message: "找不到資料或無權執行此操作。",
@@ -158,6 +196,7 @@ export async function updateRecord(
   revalidatePath("/records");
   revalidatePath(`/records/${normalizedRecordId}`);
   revalidatePath(`/records/${normalizedRecordId}/edit`);
+  revalidatePath("/activity");
 
   return {
     status: "success",
@@ -182,14 +221,30 @@ export async function deleteRecord(
   }
 
   try {
-    const result = await prisma.record.deleteMany({
-      where: {
-        id: normalizedRecordId,
-        userId: session.user.id,
-      },
+    const wasDeleted = await prisma.$transaction(async (transaction) => {
+      const result = await transaction.record.deleteMany({
+        where: {
+          id: normalizedRecordId,
+          userId: session.user.id,
+        },
+      });
+
+      if (result.count !== 1) {
+        return false;
+      }
+
+      await transaction.auditLog.create({
+        data: {
+          action: "DELETE",
+          target: getRecordAuditTarget(normalizedRecordId),
+          userId: session.user.id,
+        },
+      });
+
+      return true;
     });
 
-    if (result.count !== 1) {
+    if (!wasDeleted) {
       return {
         status: "error",
         message: "找不到資料或無權執行此操作。",
@@ -203,5 +258,6 @@ export async function deleteRecord(
   }
 
   revalidatePath("/records");
+  revalidatePath("/activity");
   redirect("/records?deleted=1");
 }

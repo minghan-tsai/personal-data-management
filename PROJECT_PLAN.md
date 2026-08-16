@@ -33,7 +33,7 @@
 
 第二版 v2 的目標是在第一版骨架與部署流程上，完成具備 PostgreSQL、Prisma、帳號驗證、個人紀錄 CRUD、使用者資料隔離、輸入驗證、錯誤處理、操作紀錄及測試的 MVP。
 
-狀態：**開發中**。v2 第 0～5 階段已完成，v2 第 6 階段尚未開始。
+狀態：**開發中**。v2 第 0～6 階段已完成，下一步為 v2 第 7 階段「輸入驗證與錯誤處理」。
 
 第二版必須依階段執行；尚未決定的技術事項需先完成決策與記錄，不在計畫階段擅自選定。
 
@@ -198,7 +198,7 @@
 
 第一版 v1 只建立 `/` 首頁。登入與註冊只顯示無功能的預留按鈕，不建立對應頁面或驗證流程。其餘路徑屬於第二版 v2 MVP。
 
-v2 第 2 階段完成當時，`/records` 僅作為驗證登入狀態的 Protected Page；v2 第 3 階段已將該頁擴充為使用 `new-record-form.tsx` 新增 Record，以及顯示目前登入使用者限定的 Record 列表，並維持未建立 `/records/new`。v2 第 4 階段已新增 `/records/[id]` 詳細頁與 `/records/[id]/edit` 修改頁，並完成 Record 查看、修改與刪除功能。
+v2 第 2 階段完成當時，`/records` 僅作為驗證登入狀態的 Protected Page；v2 第 3 階段已將該頁擴充為使用 `new-record-form.tsx` 新增 Record，以及顯示目前登入使用者限定的 Record 列表，並維持未建立 `/records/new`。v2 第 4 階段已新增 `/records/[id]` 詳細頁與 `/records/[id]/edit` 修改頁，並完成 Record 查看、修改與刪除功能。v2 第 6 階段已新增 `/activity` Server Component，供登入使用者查看自己的 Record 操作紀錄。
 
 ## 8. 第二版 v2 資料模型
 
@@ -247,7 +247,7 @@ v2 第 2 階段完成當時，`/records` 僅作為驗證登入狀態的 Protecte
 | `details` | 必要摘要，不保存密碼或完整敏感資料 |
 | `createdAt` | 操作時間 |
 
-概念上的 `AuditLog` 預計涵蓋建立、修改、刪除，以及登入或其他重要安全事件；實際記錄範圍會在對應功能階段確認。
+概念上的 `AuditLog` 原預計涵蓋建立、修改、刪除，以及登入或其他重要安全事件；v2 第 6 階段 MVP 實際範圍已確認為 Record 的 `CREATE`、`UPDATE`、`DELETE`，登入與其他安全事件未在本階段實作。
 
 ### 第 1 階段初始 Schema 與第 2 階段 Auth 整合後實際 Schema
 
@@ -322,7 +322,7 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 
 ## 10. 第二版 v2 分階段執行順序
 
-第二版 v2 已進入開發流程，v2 第 0～5 階段已完成，v2 第 6 階段尚未開始。以下階段必須依序進行；每階段開始前先說明目的，完成後記錄修改檔案、主要程式碼、啟動方式與測試結果。
+第二版 v2 已進入開發流程，v2 第 0～6 階段已完成，下一步為 v2 第 7 階段「輸入驗證與錯誤處理」。以下階段必須依序進行；每階段開始前先說明目的，完成後記錄修改檔案、主要程式碼、啟動方式與測試結果。
 
 ### v2 第 0 階段：確認待決策事項與安全邊界
 
@@ -488,7 +488,23 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 
 ### v2 第 6 階段：操作紀錄
 
-完成條件：
+狀態：**已完成**（2026-08-16）。
+
+完成結果：
+
+- 沿用既有 `AuditLog` Prisma Model，未修改 Prisma Schema，也未新增 Migration、`recordId`、`details` 或 index；第 6 階段以前的既有 Record 沒有補寫或偽造歷史 AuditLog。
+- Record CREATE、UPDATE、DELETE 成功時，分別建立 action 為 `CREATE`、`UPDATE`、`DELETE` 的 AuditLog，target 統一使用 `Record:<recordId>`。
+- 三種 Record 異動均使用 Prisma transaction，讓 Record 異動與 AuditLog 寫入維持原子性；Update／Delete 只有在同時以 `recordId + session.user.id` 限制且異動筆數為 1 時才寫入成功 AuditLog，失敗、查無資料或越權操作不會留下成功紀錄。
+- `AuditLog.userId` 一律來自 `requireServerSession()` 驗證後的 `session.user.id`，不接受 Client、FormData、URL 或 hidden input 指定使用者身分，並完整保留第 5 階段的 Server-side ownership 保護。
+- AuditLog 只保存 `action`、`target`、`userId` 與 `createdAt`；不保存 Record title／content、密碼、credential hash、Session Token、Cookie、Authorization、DATABASE_URL 或其他機密。
+- 新增 `/activity` Server Component；頁面先執行 `requireServerSession()`，再以 `where: { userId: session.user.id }` 直接查詢目前使用者的 AuditLog，僅選取必要欄位並依 `createdAt` 由新到舊排序。
+- `/activity` 顯示 CREATE／UPDATE／DELETE 的易懂中文名稱、操作目標與時間，沒有紀錄時顯示 Empty State；`/records` 已加入前往 `/activity` 的入口。
+- 人工驗收已通過：User A 的 CREATE、UPDATE、DELETE AuditLog 均正確建立，同一 Record 使用相同 target，最新紀錄位於最上方，且 Record 刪除後三筆 AuditLog 仍保留。
+- A／B 使用者操作紀錄隔離已通過：User B 看不到 User A 的 AuditLog，沒有自己的操作時顯示 Empty State；未登入直接存取 `/activity` 會導向 `/login`。
+- 失敗情境已通過：空白標題新增被伺服器端驗證拒絕且不產生 CREATE AuditLog；User B 嘗試存取 User A 的 edit URL 時只得到一般化 Record Not Found，未取得 A 的資料，也未產生假的 UPDATE AuditLog。
+- `prisma validate`、`prisma migrate status`、`npm.cmd run lint`、`npm.cmd run build` 與 `git diff --check` 均已通過。
+
+原完成條件：
 
 - 新增、修改與刪除會建立 `AuditLog`。
 - 操作紀錄不包含密碼或完整敏感資料。
@@ -530,12 +546,12 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 
 ## 11. 目前進度
 
-更新日期：2026-08-15（Asia/Taipei）
+更新日期：2026-08-16（Asia/Taipei）
 
 | 版本 | 狀態 | 說明 |
 | --- | --- | --- |
 | 第一版 v1 | 已完成 | Next.js 骨架、首頁、lint、build、GitHub 首次推送、本機與遠端同步、Vercel Production Deployment 及公開首頁 smoke test 均已完成。 |
-| 第二版 v2 | 開發中 | v2 第 0 階段技術決策與安全邊界、第 1 階段 PostgreSQL 與 Prisma 基礎、第 2 階段 Better Auth 與 Database Session、第 3 階段 Record 新增與列表、第 4 階段 Record 查看、修改與刪除、第 5 階段使用者資料隔離均已完成；v2 第 6 階段操作紀錄尚未開始。 |
+| 第二版 v2 | 開發中 | v2 第 0 階段技術決策與安全邊界、第 1 階段 PostgreSQL 與 Prisma 基礎、第 2 階段 Better Auth 與 Database Session、第 3 階段 Record 新增與列表、第 4 階段 Record 查看、修改與刪除、第 5 階段使用者資料隔離、第 6 階段操作紀錄均已完成；下一步為 v2 第 7 階段輸入驗證與錯誤處理。 |
 
 ### 環境檢查紀錄
 
@@ -580,7 +596,7 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 - 公開網址：`https://personal-data-management.vercel.app`
 - 已實際開啟公開網址，首頁 smoke test 通過。
 
-### 第二版 v2 第 0～5 階段 Git 與部署狀態
+### 第二版 v2 第 0～6 階段 Git 與部署狀態
 
 - v2 第 2 階段正式收尾完成後，`main` 與 `origin/main` 同步，並以 annotated tag `v2-stage-2` 標記 Better Auth 與 Database Session 完成狀態。
 - tag `v2-stage-0` 指向 commit `aca8047b64d9da396a424068c21d9c7a585e1a08`，訊息為「完成 v2 第 0 階段技術決策與安全邊界」。
@@ -589,6 +605,7 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 - v2 第 3 階段以 annotated tag `v2-stage-3` 標記 Record 新增與列表完成狀態，並於本階段收尾推送至遠端。
 - v2 第 4 階段以 annotated tag `v2-stage-4` 標記 Record 查看、修改與刪除完成狀態，並於本階段收尾推送至遠端。
 - v2 第 5 階段以 annotated tag `v2-stage-5` 標記使用者資料隔離與人工越權驗收完成狀態，並於本階段收尾推送至遠端。
+- v2 第 6 階段以 annotated tag `v2-stage-6` 標記 Record 操作紀錄與 `/activity` 完成狀態，並於本階段收尾推送至遠端。
 - Vercel Production 已在加入 `postinstall` 修正後成功完成乾淨建置與部署。
 - 2026-08-12 公開網址再次驗證為 HTTP 200，首頁正常顯示。
 - v2 第 2 階段 production build 已在本機通過；正式環境 Auth 尚未配置雲端 PostgreSQL，因此 Production Auth／Database 流程尚未驗證，保留至 v2 第 9 階段。
@@ -603,15 +620,15 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 | v2 第 3 階段 | 已完成 | Record Server Action 新增、目前使用者限定列表、最小伺服器端驗證、A／B 資料隔離人工驗收及 lint／build 均完成；tag `v2-stage-3` 於本階段收尾建立並推送。 |
 | v2 第 4 階段 | 已完成 | Record 詳細頁、修改頁、Update／Delete Server Actions、刪除確認、統一 Not Found、成功／失敗狀態、人工驗收及 lint／build 均完成；tag `v2-stage-4` 於本階段收尾建立並推送。 |
 | v2 第 5 階段 | 已完成 | A／B 列表隔離、跨帳號 Read／Edit、Update／Delete Server Action 重播及反向越權驗收均通過；所有 Record 操作以有效 Session 的 `userId` 授權；tag `v2-stage-5` 於本階段收尾建立並推送。 |
-| v2 第 6 階段 | 尚未開始 | 下一步為實作新增、修改與刪除的 `AuditLog`，並提供目前登入者的必要操作紀錄頁面。 |
+| v2 第 6 階段 | 已完成 | Record CREATE／UPDATE／DELETE 與 AuditLog 已使用 Prisma transaction 維持原子性；`/activity` 僅查詢目前登入者紀錄，A／B 隔離與失敗不留成功 Log 的人工驗收均通過；tag `v2-stage-6` 於本階段收尾建立並推送。 |
+| v2 第 7 階段 | 尚未開始／下一步 | 安裝並使用 Zod 完成執行時輸入驗證，並整理一致且不洩漏內部資訊的錯誤處理。 |
 
 ### 第二版 v2 尚未完成項目
 
 - Zod 尚未安裝，完整伺服器端輸入驗證與一致錯誤處理留待 v2 第 7 階段。
 - Record 新增、列表、詳細頁、修改、刪除與伺服器端使用者資料隔離均已完成；跨帳號 Read／Edit、Update／Delete Action 重播及反向越權人工驗收均已通過。
-- `AuditLog` 實際操作紀錄尚未實作，為 v2 第 6 階段下一步。
 - Vitest 與 Playwright 尚未安裝或建立測試，GitHub Actions CI Workflow 亦尚未建立，均留待 v2 第 8 階段「測試與 CI」。
-- 雲端 PostgreSQL 供應商仍為待決策，正式環境 Auth／Database 驗證預定於 v2 第 9 階段處理。
+- 雲端 PostgreSQL 供應商仍為待決策；README、正式部署，以及正式環境 Auth／Database 驗證預定於 v2 第 9 階段處理。
 
 ## 12. 重要技術決策紀錄
 
@@ -653,6 +670,8 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 | 2026-08-15 | CI／CD 責任分工採 GitHub Actions CI 與 Vercel Git Integration CD | v2 第 8 階段建立 GitHub Actions 自動執行 lint、Vitest 與主要流程測試，並依實際設計安排 TypeScript／production build；部署沿用既有 Vercel Git Integration，不建立重複的 GitHub Actions Deployment Pipeline，正式環境資料庫與機密設定留待第 9 階段。 |
 | 2026-08-15 | v2 第 5 階段以跨帳號 Action 重播驗證 Server-side ownership | 除網址竄改外，將合法 Update／Delete Server Action request 改由另一個有效使用者 Session 重播，確認 `recordId + session.user.id` 條件會阻擋跨帳號異動，且測試請求不保存或轉移原 Session 機密。 |
 | 2026-08-15 | v2 第 5 階段標記為完成 | A／B 列表隔離、雙向 Read／Edit、Update／Delete Action 重播均通過；安全審查未發現需修改的程式碼，下一步為第 6 階段 `AuditLog`。 |
+| 2026-08-16 | Record 異動與 AuditLog 採同一個 Prisma transaction | CREATE／UPDATE／DELETE 只有在目前使用者的 Record 異動成功時才寫入 `Record:<recordId>` AuditLog；`userId` 只來自有效 Session，並且不記錄 Record 完整內容或驗證機密。 |
+| 2026-08-16 | v2 第 6 階段標記為完成 | `/activity` 只在 Database Query 層查詢目前登入者的 AuditLog；CREATE／UPDATE／DELETE、刪除後 Log 保留、排序、A／B 隔離、失敗不留成功 Log 與未登入保護均通過人工驗收，下一步為第 7 階段輸入驗證與錯誤處理。 |
 
 ## 13. 測試、啟動與公開網址
 

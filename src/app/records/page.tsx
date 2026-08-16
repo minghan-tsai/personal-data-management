@@ -39,7 +39,15 @@ export default async function RecordsPage({
               </p>
               <p className="mt-1 text-sm text-slate-500">登入 Email：{session.user.email}</p>
             </div>
-            <LogoutButton />
+            <div className="flex flex-wrap items-center gap-3">
+              <Link
+                className="rounded-xl border border-slate-300 px-5 py-3 font-semibold text-slate-700 transition hover:bg-slate-50"
+                href="/activity"
+              >
+                操作紀錄
+              </Link>
+              <LogoutButton />
+            </div>
           </div>
         </section>
 
