@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { DeleteRecordButton } from "@/app/records/[id]/delete-record-button";
 import { prisma } from "@/lib/prisma";
 import { requireServerSession } from "@/lib/session";
+import { recordIdSchema } from "@/lib/validation/record";
 
 export const metadata: Metadata = {
   title: "資料詳細｜個人資料管理系統",
@@ -25,9 +26,15 @@ export default async function RecordDetailPage({
 }) {
   const session = await requireServerSession();
   const { id } = await params;
+  const parsedRecordId = recordIdSchema.safeParse(id);
+
+  if (!parsedRecordId.success) {
+    notFound();
+  }
+
   const record = await prisma.record.findFirst({
     where: {
-      id,
+      id: parsedRecordId.data,
       userId: session.user.id,
     },
   });

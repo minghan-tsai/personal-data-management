@@ -5,9 +5,12 @@ import { redirect } from "next/navigation";
 
 import { prisma } from "@/lib/prisma";
 import { requireServerSession } from "@/lib/session";
-
-const TITLE_MAX_LENGTH = 120;
-const CONTENT_MAX_LENGTH = 2000;
+import {
+  INVALID_RECORD_ID_MESSAGE,
+  INVALID_RECORD_INPUT_MESSAGE,
+  recordIdSchema,
+  recordInputSchema,
+} from "@/lib/validation/record";
 
 function getRecordAuditTarget(recordId: string) {
   return `Record:${recordId}`;
@@ -21,81 +24,20 @@ export type CreateRecordState = {
 export type UpdateRecordState = CreateRecordState;
 export type DeleteRecordState = CreateRecordState;
 
-type RecordInputResult =
-  | {
-      data: {
-        title: string;
-        content: string | null;
-      };
-    }
-  | {
-      message: string;
-    };
-
-function validateRecordId(recordId: unknown) {
-  if (typeof recordId !== "string") {
-    return null;
-  }
-
-  const normalizedRecordId = recordId.trim();
-
-  if (!normalizedRecordId || normalizedRecordId.length > 100) {
-    return null;
-  }
-
-  return normalizedRecordId;
-}
-
-function validateRecordInput(formData: FormData): RecordInputResult {
-  const titleValue = formData.get("title");
-  const contentValue = formData.get("content");
-
-  if (typeof titleValue !== "string" || typeof contentValue !== "string") {
-    return {
-      message: "資料格式不正確，請重新輸入。",
-    };
-  }
-
-  const title = titleValue.trim();
-  const content = contentValue.trim();
-
-  if (!title) {
-    return {
-      message: "標題不可為空白。",
-    };
-  }
-
-  if (title.length > TITLE_MAX_LENGTH) {
-    return {
-      message: `標題不可超過 ${TITLE_MAX_LENGTH} 個字元。`,
-    };
-  }
-
-  if (content.length > CONTENT_MAX_LENGTH) {
-    return {
-      message: `內容不可超過 ${CONTENT_MAX_LENGTH} 個字元。`,
-    };
-  }
-
-  return {
-    data: {
-      title,
-      content: content || null,
-    },
-  };
-}
-
 export async function createRecord(
   _previousState: CreateRecordState,
   formData: FormData,
 ): Promise<CreateRecordState> {
   const session = await requireServerSession();
-  const input = validateRecordInput(formData);
+  const input = recordInputSchema.safeParse({
+    title: formData.get("title"),
+    content: formData.get("content"),
+  });
 
-  if ("message" in input) {
+  if (!input.success) {
     return {
       status: "error",
-      message: input.message,
+      message: input.error.issues[0]?.message ?? INVALID_RECORD_INPUT_MESSAGE,
     };
   }
 
@@ -138,22 +80,27 @@ export async function updateRecord(
   formData: FormData,
 ): Promise<UpdateRecordState> {
   const session = await requireServerSession();
-  const normalizedRecordId = validateRecordId(recordId);
-  const input = validateRecordInput(formData);
+  const parsedRecordId = recordIdSchema.safeParse(recordId);
+  const input = recordInputSchema.safeParse({
+    title: formData.get("title"),
+    content: formData.get("content"),
+  });
 
-  if (!normalizedRecordId) {
+  if (!parsedRecordId.success) {
     return {
       status: "error",
-      message: "找不到資料或無權執行此操作。",
+      message: parsedRecordId.error.issues[0]?.message ?? INVALID_RECORD_ID_MESSAGE,
     };
   }
 
-  if ("message" in input) {
+  if (!input.success) {
     return {
       status: "error",
-      message: input.message,
+      message: input.error.issues[0]?.message ?? INVALID_RECORD_INPUT_MESSAGE,
     };
   }
+
+  const normalizedRecordId = parsedRecordId.data;
 
   try {
     const wasUpdated = await prisma.$transaction(async (transaction) => {
@@ -211,14 +158,16 @@ export async function deleteRecord(
   void _previousState;
 
   const session = await requireServerSession();
-  const normalizedRecordId = validateRecordId(recordId);
+  const parsedRecordId = recordIdSchema.safeParse(recordId);
 
-  if (!normalizedRecordId) {
+  if (!parsedRecordId.success) {
     return {
       status: "error",
-      message: "找不到資料或無權執行此操作。",
+      message: parsedRecordId.error.issues[0]?.message ?? INVALID_RECORD_ID_MESSAGE,
     };
   }
+
+  const normalizedRecordId = parsedRecordId.data;
 
   try {
     const wasDeleted = await prisma.$transaction(async (transaction) => {

@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { EditRecordForm } from "@/app/records/[id]/edit/edit-record-form";
 import { prisma } from "@/lib/prisma";
 import { requireServerSession } from "@/lib/session";
+import { recordIdSchema } from "@/lib/validation/record";
 
 export const metadata: Metadata = {
   title: "修改資料｜個人資料管理系統",
@@ -17,9 +18,15 @@ export default async function EditRecordPage({
 }) {
   const session = await requireServerSession();
   const { id } = await params;
+  const parsedRecordId = recordIdSchema.safeParse(id);
+
+  if (!parsedRecordId.success) {
+    notFound();
+  }
+
   const record = await prisma.record.findFirst({
     where: {
-      id,
+      id: parsedRecordId.data,
       userId: session.user.id,
     },
     select: {
