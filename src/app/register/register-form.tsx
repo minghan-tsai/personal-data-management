@@ -47,12 +47,12 @@ export function RegisterForm() {
   return (
     <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
       <div>
-        <label className="mb-2 block text-sm font-semibold text-slate-700" htmlFor="name">
+        <label className="field-label" htmlFor="name">
           顯示名稱
         </label>
         <input
           autoComplete="name"
-          className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+          className="field-control"
           id="name"
           maxLength={80}
           name="name"
@@ -62,12 +62,12 @@ export function RegisterForm() {
       </div>
 
       <div>
-        <label className="mb-2 block text-sm font-semibold text-slate-700" htmlFor="email">
+        <label className="field-label" htmlFor="email">
           Email
         </label>
         <input
           autoComplete="email"
-          className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+          className="field-control"
           id="email"
           name="email"
           required
@@ -76,13 +76,13 @@ export function RegisterForm() {
       </div>
 
       <div>
-        <label className="mb-2 block text-sm font-semibold text-slate-700" htmlFor="password">
+        <label className="field-label" htmlFor="password">
           密碼
         </label>
         <div className="relative">
           <input
             autoComplete="new-password"
-            className="w-full rounded-xl border border-slate-300 py-3 pr-12 pl-4 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+            className="field-control pr-12"
             id="password"
             maxLength={128}
             minLength={8}
@@ -93,7 +93,7 @@ export function RegisterForm() {
           <button
             aria-label={showPassword ? "隱藏密碼" : "顯示密碼"}
             aria-pressed={showPassword}
-            className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-xl text-slate-500 transition hover:text-blue-700 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-blue-700"
+            className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-[0.625rem] text-slate-500 transition hover:text-blue-700 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-blue-700"
             onClick={() => setShowPassword((visible) => !visible)}
             type="button"
           >
@@ -121,17 +121,17 @@ export function RegisterForm() {
             )}
           </button>
         </div>
-        <p className="mt-2 text-sm text-slate-500">密碼至少 8 個字元。</p>
+        <p className="help-text">密碼至少 8 個字元。</p>
       </div>
 
       {error ? (
-        <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+        <p className="status-message status-error" role="alert">
           {error}
         </p>
       ) : null}
 
       <button
-        className="w-full rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
+        className="button button-primary w-full"
         disabled={isSubmitting}
         type="submit"
       >
@@ -140,13 +140,13 @@ export function RegisterForm() {
 
       <p className="text-center text-sm text-slate-600">
         已經有帳號？{" "}
-        <Link className="font-semibold text-blue-700 hover:underline" href="/login">
+        <Link className="font-semibold text-blue-700 underline-offset-4 hover:underline" href="/login">
           前往登入
         </Link>
       </p>
 
       <Link
-        className="block w-full rounded-xl border border-slate-300 px-6 py-3 text-center font-semibold text-slate-700 transition hover:bg-slate-50"
+        className="button button-secondary w-full"
         href="/"
       >
         返回首頁

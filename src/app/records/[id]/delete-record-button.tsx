@@ -27,7 +27,7 @@ export function DeleteRecordButton({ recordId }: { recordId: string }) {
       }}
     >
       <button
-        className="rounded-xl bg-red-700 px-5 py-3 font-semibold text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-60"
+        className="button button-danger w-full sm:w-auto"
         disabled={isPending}
         type="submit"
       >
@@ -35,7 +35,7 @@ export function DeleteRecordButton({ recordId }: { recordId: string }) {
       </button>
 
       {state.status === "error" ? (
-        <p className="mt-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+        <p className="status-message status-error mt-3" role="alert">
           {state.message}
         </p>
       ) : null}

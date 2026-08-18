@@ -16,11 +16,10 @@ export default async function RegisterPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-6 py-16">
-      <section className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/60 sm:p-10">
-        <p className="text-sm font-semibold tracking-[0.18em] text-blue-700">CREATE ACCOUNT</p>
-        <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">註冊</h1>
-        <p className="mt-3 leading-7 text-slate-600">建立測試帳號，開始使用個人資料管理系統。</p>
+    <main className="auth-shell">
+      <section className="panel w-full p-7 sm:p-9">
+        <h1 className="text-3xl font-bold tracking-tight text-slate-950">註冊</h1>
+        <p className="mt-3 leading-7 text-slate-600">建立虛構測試帳號，開始使用個人紀錄管理功能。</p>
         <RegisterForm />
       </section>
     </main>

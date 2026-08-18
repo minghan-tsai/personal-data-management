@@ -29,11 +29,11 @@ export function EditRecordForm({ record }: EditRecordFormProps) {
   return (
     <form action={formAction} className="mt-8 space-y-5">
       <div>
-        <label className="mb-2 block text-sm font-semibold text-slate-700" htmlFor="title">
+        <label className="field-label" htmlFor="title">
           標題
         </label>
         <input
-          className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+          className="field-control"
           defaultValue={record.title}
           id="title"
           maxLength={120}
@@ -44,11 +44,11 @@ export function EditRecordForm({ record }: EditRecordFormProps) {
       </div>
 
       <div>
-        <label className="mb-2 block text-sm font-semibold text-slate-700" htmlFor="content">
+        <label className="field-label" htmlFor="content">
           內容
         </label>
         <textarea
-          className="min-h-40 w-full resize-y rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+          className="field-control min-h-40 resize-y"
           defaultValue={record.content ?? ""}
           id="content"
           maxLength={2000}
@@ -60,8 +60,8 @@ export function EditRecordForm({ record }: EditRecordFormProps) {
         <p
           className={
             state.status === "error"
-              ? "rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700"
-              : "rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700"
+              ? "status-message status-error"
+              : "status-message status-success"
           }
           role={state.status === "error" ? "alert" : "status"}
         >
@@ -69,19 +69,22 @@ export function EditRecordForm({ record }: EditRecordFormProps) {
         </p>
       ) : null}
 
-      <div className="flex flex-col gap-3 sm:flex-row">
+      <div className="flex flex-col gap-3 border-t border-slate-200 pt-5 sm:flex-row">
         <button
-          className="rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
+          className="button button-primary"
           disabled={isPending}
           type="submit"
         >
           {isPending ? "儲存中…" : "儲存修改"}
         </button>
         <Link
-          className="rounded-xl border border-slate-300 px-6 py-3 text-center font-semibold text-slate-700 transition hover:bg-slate-50"
+          className="button button-secondary"
           href={`/records/${record.id}`}
         >
           取消並返回
+        </Link>
+        <Link className="button button-secondary" href="/records">
+          返回紀錄列表
         </Link>
       </div>
     </form>

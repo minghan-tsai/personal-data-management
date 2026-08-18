@@ -33,7 +33,7 @@
 
 第二版 v2 的目標是在第一版骨架與部署流程上，完成具備 PostgreSQL、Prisma、帳號驗證、個人紀錄 CRUD、使用者資料隔離、輸入驗證、錯誤處理、操作紀錄及測試的 MVP。
 
-狀態：**開發中**。v2 第 0～7 階段已完成，下一步為 v2 第 8 階段「測試與 CI」。
+狀態：**開發中**。v2 第 0～8 階段已完成，下一步為 v2 第 9 階段「自動化測試與 CI」；v2 第 10 階段維持「文件與正式環境驗證」。
 
 第二版必須依階段執行；尚未決定的技術事項需先完成決策與記錄，不在計畫階段擅自選定。
 
@@ -89,13 +89,13 @@
 | 身分驗證 | Better Auth 1.6.27（已實作） | 已完成 Email／Password 註冊、登入與登出；不做 OAuth、Email 驗證、忘記密碼或 2FA。 |
 | Session 策略 | 資料庫 Session（已實作） | Session 儲存於 PostgreSQL；受保護頁面在伺服器端驗證有效 Session，不能只因 Cookie 存在就視為已登入。 |
 | 密碼雜湊方案 | Better Auth 預設方案（已實作） | credential hash 儲存於 `Account.password`；不自行發明密碼演算法或增加第二層雜湊，資料庫不保存明文密碼。 |
-| 欄位驗證函式庫 | Zod 4.4.3（已實作） | `package.json` 已宣告 `zod ^4.4.3` direct dependency，並以獨立 Record Schema 在伺服器端執行 runtime validation；v2 第 8 階段將使用 Vitest 測試這些 Schema。 |
+| 欄位驗證函式庫 | Zod 4.4.3（已實作） | `package.json` 已宣告 `zod ^4.4.3` direct dependency，並以獨立 Record Schema 在伺服器端執行 runtime validation；v2 第 9 階段將使用 Vitest 測試這些 Schema。 |
 | 後端操作方式 | Server Components、Server Actions、Route Handlers 分工 | 讀取、網站內部異動及必要 HTTP API 各自使用對應機制，不重複建立 `/api/records` CRUD。 |
-| 測試與 CI | 單元與整合／流程測試、GitHub Actions CI | 每階段先執行人工驗證、lint 與 build；v2 第 8 階段加入 Vitest、Playwright 與 GitHub Actions 自動檢查，目前相關套件與 Workflow 均尚未建立。 |
+| 測試與 CI | 單元與整合／流程測試、GitHub Actions CI | 每階段先執行人工驗證、lint 與 build；v2 第 9 階段加入 Vitest、Playwright 與 GitHub Actions 自動檢查，目前相關套件與 Workflow 均尚未建立。 |
 | 套件管理 | npm | Node.js 隨附、文件普遍，適合初學者。 |
 | 部署／CD | Vercel Git Integration（第一版已採用） | GitHub Repository 作為版本來源，Vercel 負責乾淨環境安裝、既有 `postinstall: prisma generate`、Production Build 與 Deployment；不另建重複的 GitHub Actions CD Pipeline。 |
 | 本機 PostgreSQL 開發方式 | Windows 本機直接安裝（已完成） | PostgreSQL 18、pgAdmin 4 與 Command Line Tools 已安裝於 D 槽，開發資料庫已建立。 |
-| 雲端資料庫供應商 | 待決策 | v2 第 9 階段再比較 Neon、Supabase、Prisma Postgres 或其他託管 PostgreSQL。 |
+| 雲端資料庫供應商 | 待決策 | v2 第 10 階段再比較 Neon、Supabase、Prisma Postgres 或其他託管 PostgreSQL。 |
 
 ### `src` 資料夾決策
 
@@ -116,7 +116,7 @@
 
 - 雲端 PostgreSQL 供應商維持待決策，第 0 階段不指定供應商。
 - 開發期間使用本機 PostgreSQL。
-- v2 第 9 階段再比較 Neon、Supabase、Prisma Postgres 或其他託管 PostgreSQL。
+- v2 第 10 階段再比較 Neon、Supabase、Prisma Postgres 或其他託管 PostgreSQL。
 - 屆時依免費額度、連線限制、Vercel 相容性與維護成本決定。
 
 #### 3. Auth
@@ -158,12 +158,12 @@
 - 每個開發階段都執行人工驗證。
 - 每個階段執行 `npm.cmd run lint` 與 `npm.cmd run build`。
 - 單元測試與整合／流程測試為主，隨後續功能階段逐步加入。
-- v2 第 8 階段規劃採 Vitest 測試 Zod Schema 與純邏輯。
-- v2 第 8 階段規劃採 Playwright 測試註冊、登入、CRUD 與越權情境。
+- v2 第 9 階段規劃採 Vitest 測試 Zod Schema 與純邏輯。
+- v2 第 9 階段規劃採 Playwright 測試註冊、登入、CRUD 與越權情境。
 - 不以覆蓋率數字為主要目標，優先測試登入、資料異動與使用者資料隔離。
-- v2 第 8 階段規劃建立 GitHub Actions CI，Repository 程式碼更新後自動執行 lint、Vitest，以及 Playwright 或適合 CI 環境的主要流程測試。
-- TypeScript／production build 是否在同一 CI Workflow 執行，應依第 8 階段實際設計與既有建置流程決定，避免沒有必要的重複；CI 失敗時必須能從 GitHub Actions 清楚辨識失敗步驟。
-- GitHub Actions Workflow 尚未建立，留待 v2 第 8 階段實作。
+- v2 第 9 階段規劃建立 GitHub Actions CI，Repository 程式碼更新後自動執行 lint、Vitest，以及 Playwright 或適合 CI 環境的主要流程測試。
+- TypeScript／production build 是否在同一 CI Workflow 執行，應依第 9 階段實際設計與既有建置流程決定，避免沒有必要的重複；CI 失敗時必須能從 GitHub Actions 清楚辨識失敗步驟。
+- GitHub Actions Workflow 尚未建立，留待 v2 第 9 階段實作。
 
 #### 9. 機密資料與 Git 安全規則
 
@@ -179,10 +179,10 @@
 
 #### 10. CI／CD 責任分工
 
-- GitHub Actions 負責 CI；實際 Workflow 留待 v2 第 8 階段建立，不在目前階段提前實作。
+- GitHub Actions 負責 CI；實際 Workflow 留待 v2 第 9 階段建立，不在目前階段提前實作。
 - Vercel Git Integration 負責 CD／Deployment，GitHub Repository 作為版本來源；Vercel 在乾淨環境安裝套件、執行既有 `postinstall: prisma generate`、Production Build 與 Deployment。
 - 本專案不另外建立 GitHub Actions Deployment Pipeline，避免與 Vercel Git Integration 重複。
-- 正式環境 Environment Variables、雲端 PostgreSQL 供應商與 Production Auth／Database 驗證仍留待 v2 第 9 階段。
+- 正式環境 Environment Variables、雲端 PostgreSQL 供應商與 Production Auth／Database 驗證仍留待 v2 第 10 階段。
 
 ## 7. 頁面規劃
 
@@ -322,7 +322,9 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 
 ## 10. 第二版 v2 分階段執行順序
 
-第二版 v2 已進入開發流程，v2 第 0～7 階段已完成，下一步為 v2 第 8 階段「測試與 CI」。以下階段必須依序進行；每階段開始前先說明目的，完成後記錄修改檔案、主要程式碼、啟動方式與測試結果。
+第二版 v2 已進入開發流程，v2 第 0～8 階段已完成，下一步為 v2 第 9 階段「自動化測試與 CI」；v2 第 10 階段「文件與正式環境驗證」仍為最終收尾階段。以下階段必須依序進行；每階段開始前先說明目的，完成後記錄修改檔案、主要程式碼、啟動方式與測試結果。
+
+後續開發順序為：v2 第 0～8 階段核心功能、安全性、操作紀錄、輸入驗證、錯誤處理及 UI／UX 與求職作品展示品質改善已完成 → v2 第 9 階段針對目前定型的介面與功能建立自動化測試與 CI → v2 第 10 階段完成文件、正式環境與最終封版驗證。
 
 ### v2 第 0 階段：確認待決策事項與安全邊界
 
@@ -337,7 +339,7 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 - 已決定以單元與整合／流程測試為主，每階段執行人工驗證、lint、build，後續再逐步加入測試。
 - 已完成 `User`、`Record`／`PersonalRecord` 與 `AuditLog` 的概念草圖及資料擁有權方向。
 - 已記錄機密資料、Git、資料擁有權、錯誤訊息與 `AuditLog` 安全規則。
-- 雲端 PostgreSQL 供應商仍為待決策，延至 v2 第 9 階段評估。
+- 雲端 PostgreSQL 供應商仍為待決策，延至 v2 第 10 階段評估。
 - 已建立並推送 Git tag `v2-stage-0`，指向 commit `aca8047b64d9da396a424068c21d9c7a585e1a08`。
 
 ### v2 第 1 階段：PostgreSQL 與 Prisma 基礎
@@ -411,7 +413,7 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 
 - 本階段只確認本機 production build 成功。
 - 正式環境尚未配置可供 Auth 使用的雲端 PostgreSQL，因此未將 v2 第 2 階段 Production Auth／Database 驗證標記為完成。
-- 雲端 PostgreSQL 供應商決策與正式 Auth 驗證仍留待 v2 第 9 階段，不提前導入任何供應商。
+- 雲端 PostgreSQL 供應商決策與正式 Auth 驗證仍留待 v2 第 10 階段，不提前導入任何供應商。
 
 ### v2 第 3 階段：新增與列表
 
@@ -516,7 +518,7 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 
 完成結果：
 
-- 已將 `zod ^4.4.3` 正式加入專案 direct dependency，新增純模組 `src/lib/validation/record.ts`，供目前 Server Actions 使用並可在 v2 第 8 階段直接使用 Vitest 測試；Schema 沿用既有商業規則，沒有擅自增加新限制。
+- 已將 `zod ^4.4.3` 正式加入專案 direct dependency，新增純模組 `src/lib/validation/record.ts`，供目前 Server Actions 使用並可在 v2 第 9 階段直接使用 Vitest 測試；Schema 沿用既有商業規則，沒有擅自增加新限制。
 - Record title 必須為字串，先執行 `trim()`，trim 後不可為空白，最長 120 字元。
 - Record content 必須為字串，先執行 `trim()`，最長 2,000 字元；純空白內容轉為 `null`，維持既有無內容資料行為。
 - recordId 必須為字串並先執行 `trim()`，再使用 Zod CUID validation，對應目前 Prisma Record 的 `@default(cuid())`。
@@ -536,7 +538,7 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 - 第 6 階段以前建立的既有 Record 不補寫歷史 CREATE AuditLog；舊 Record 沒有 CREATE Log 屬於原設計行為，不是錯誤。
 - `prisma validate`、`prisma migrate status`、`npm.cmd run lint`、`npm.cmd run build` 與 `git diff --check` 均已通過；目前 2 個 migrations 均已套用，Database Schema 為最新。
 - npm 仍有既有 3 個 high severity vulnerabilities，未執行可能造成破壞性相依變更的 `npm audit fix --force`。
-- 第 7 階段功能實作及人工驗收已完成；Git commit、push 與 `v2-stage-7` tag 將由使用者本人在文件更新後完成，目前不得記錄為已建立或推送。
+- 第 7 階段功能實作、人工驗收與 Git 封版均已完成；commit `53d736bf6bc1fc5f6eb2878bceb5b61efd76c085` 已推送至 `origin/main`，annotated tag `v2-stage-7` 已建立並推送，且指向同一個第 7 階段完成 commit。
 
 原完成條件：
 
@@ -546,7 +548,61 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 - 常見錯誤有一致且不洩漏系統細節的訊息。
 - 操作成功、驗證失敗、查無資料及無權存取均有清楚提示。
 
-### v2 第 8 階段：測試與 CI
+### v2 第 8 階段：UI／UX 與作品展示品質改善
+
+狀態：**已完成（2026-08-18）**。
+
+階段目標：
+
+在不改變目前已完成的核心功能、安全設計與資料存取行為的前提下，改善網站整體視覺、版面一致性與使用體驗，使專案更接近可正式展示於履歷、GitHub 與面試中的求職作品。
+
+完成結果：
+
+- 已將原本偏向功能驗證型的介面整理為 Clean、Modern、Professional，以及 Internal system／business application 風格，使首頁與功能頁更適合作為履歷、GitHub 與面試中的求職作品展示。
+- UI 一般文案以繁體中文為主；Next.js、PostgreSQL、Prisma、Authentication、CRUD、Session、Authorization、Zod、Server-side validation 等技術專有名詞維持英文標準寫法。
+- Root Layout 已統一整合共用 Header、主要內容區與 Footer；全站背景、內容最大寬度、Panel、Typography、Button、Form、狀態訊息及 Empty State 等 presentation 樣式已整理為一致設計，短內容頁面的 Footer 亦能維持合理位置。
+- 共用 Header／Navbar 的系統名稱為 `Personal Data Management System`，位於左側並可連回首頁；未登入顯示「首頁、登入、註冊」，登入後顯示「首頁、我的紀錄、操作紀錄、登出」，作者姓名不放在 Header。
+- 登出元件由 `src/app/records/logout-button.tsx` 搬移至 `src/components/logout-button.tsx`，仍沿用既有 Better Auth `authClient.signOut()`，沒有建立第二套登出流程。
+- 已新增全站共用 Footer：`© 2026 Ming-Han Tsai · Personal Data Management System`，由共用 Layout 提供，不在各頁重複撰寫。
+- 首頁已由骨架／測試型內容調整為正式作品入口，包含系統定位、登入／註冊或登入後紀錄入口、Authentication、CRUD、使用者資料隔離、Server-side validation、AuditLog／操作紀錄、虛構測試資料安全說明，以及 Next.js、PostgreSQL、Prisma 等核心技術摘要；首頁保留少量作品展示型小標，功能頁則移除重複的 presentation label。
+- Login 與 Register 已採一致的 Auth Card／Panel、表單欄位、Button、錯誤訊息與導覽風格；顯示／隱藏密碼、Better Auth 登入／註冊、原有驗證與安全錯誤處理均保留。
+- `/records` 已整理為正式主要管理頁面，包含 Page Header、整合於 Page Header 的登入使用者名稱與 Email、新增紀錄區、紀錄列表、Record Card、紀錄數量、建立時間、Detail 入口、Empty State，以及 Success／Error／Pending 狀態；桌面採雙欄配置，較小螢幕自動堆疊。
+- Record Detail 已整理為正式 Content Panel，清楚顯示 title、content、createdAt、updatedAt、返回紀錄列表、修改及刪除操作；Delete 使用獨立 danger presentation，既有 `window.confirm()` 行為保持不變。
+- Edit 頁使用與 Create 一致的 Form Design，保留既有資料預填、Success／Error／Pending 狀態與合理返回入口。
+- `/activity` 已整理為正式操作紀錄頁，CREATE、UPDATE、DELETE 以低調狀態樣式區分，最新紀錄仍優先顯示，使用者資料隔離與 Empty State 均保留；畫面由 `操作目標：Record:<recordId>` 改為 `紀錄 ID：<recordId>`，但資料庫 `target = Record:<recordId>` 的寫入格式完全未修改。
+- 一般化 Record Not Found、Error、Success 與 Empty State presentation 已統一；仍不區分資料不存在或屬於其他帳號，也不顯示 owner、SQL、Prisma error、stack trace 或其他內部資訊。
+- Responsive 已確認桌面與約 360px 寬度正常：Header／Navbar、Form、Record Card、Button、首頁及 Footer 均可正常顯示或換行，沒有水平 overflow，且 `document.scrollWidth` 與 viewport 寬度一致；未建立複雜 Hamburger Menu。
+- 本階段未新增 UI Library、動畫框架或其他 dependency；`package.json` 與 lock file未因 UI 改造新增相依套件。
+
+主要新增／修改檔案：
+
+- 新增 `src/components/site-header.tsx`、`src/components/site-footer.tsx`、`src/components/logout-button.tsx`。
+- 修改 `src/app/layout.tsx`、`src/app/globals.css`、`src/app/page.tsx`。
+- 修改 Login／Register 頁面及表單、`src/app/records/page.tsx`、`src/app/records/new-record-form.tsx`、Record Detail、Delete Button、Record Not Found、Edit 頁面與表單，以及 `src/app/activity/page.tsx`。
+- 刪除原本的 `src/app/records/logout-button.tsx`；登出元件只有共用 components 版本，沒有同時保留兩份。
+
+核心架構未變更：
+
+- 本階段只處理 presentation／UI／UX，沒有修改 Prisma Schema、Prisma Migration、PostgreSQL Schema、Better Auth 架構、Database Session、Authorization、`requireServerSession()`、Record Server Actions、Server-side ownership validation、`recordId + session.user.id`、A／B 使用者資料隔離、AuditLog transaction、AuditLog data model、Zod Schema、Zod 商業限制或 Route 架構。
+- UI 改造沒有削弱 Authentication、Protected routes、Record CRUD、越權防護、AuditLog、`/activity`、Input validation、Error handling 或其他 v2 第 0～7 階段已完成的功能與安全設計。
+
+自動檢查：
+
+- `npm.cmd run lint` 通過，0 errors、0 warnings。
+- `npm.cmd run build` 通過，TypeScript 與 Production Build 成功。
+- `prisma validate` 通過。
+- `prisma migrate status` 通過；目前 2 個 migrations 均已套用，Database Schema 為最新。
+- `git diff --check` 通過，沒有 whitespace error；Windows LF／CRLF 提示不屬於 diff error。
+
+人工驗收：
+
+- 使用者本人已完成未登入首頁、Login、Register、未登入存取 `/records`／`/activity` 導向 `/login`、登入後 Header 切換，以及首頁與主要功能導覽驗收，結果全部通過。
+- 正常新增 Record、空白 title Server-side validation、Record List、Record Detail、Edit／Update、Delete confirm 取消與確認、Activity CREATE／UPDATE／DELETE 顯示均通過。
+- 無效 Record ID 維持一般化 Not Found，沒有 HTTP 500 或內部資訊洩漏；跨帳號 Record 存取仍受 Server-side ownership／Authorization 保護。
+- 桌面與約 360px 寬度 Responsive、無水平 overflow 及 Footer 顯示均通過。
+- 第 8 階段功能實作、自動檢查與人工驗收已完成；Git commit、push 與 `v2-stage-8` tag 尚待使用者本人完成，目前不得記錄為已建立或推送。
+
+### v2 第 9 階段：自動化測試與 CI
 
 完成條件：
 
@@ -559,7 +615,7 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 - 依實際 CI 設計決定 TypeScript／production build 檢查的執行位置，避免與既有流程沒有必要地重複，並讓 Workflow 中各檢查步驟及失敗原因清楚可辨識。
 - 本階段只建立 CI，不建立 GitHub Actions CD／Deployment Pipeline。
 
-### v2 第 9 階段：文件與正式環境驗證
+### v2 第 10 階段：文件與正式環境驗證
 
 完成條件：
 
@@ -572,12 +628,12 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 
 ## 11. 目前進度
 
-更新日期：2026-08-17（Asia/Taipei）
+更新日期：2026-08-18（Asia/Taipei）
 
 | 版本 | 狀態 | 說明 |
 | --- | --- | --- |
 | 第一版 v1 | 已完成 | Next.js 骨架、首頁、lint、build、GitHub 首次推送、本機與遠端同步、Vercel Production Deployment 及公開首頁 smoke test 均已完成。 |
-| 第二版 v2 | 開發中 | v2 第 0 階段技術決策與安全邊界、第 1 階段 PostgreSQL 與 Prisma 基礎、第 2 階段 Better Auth 與 Database Session、第 3 階段 Record 新增與列表、第 4 階段 Record 查看、修改與刪除、第 5 階段使用者資料隔離、第 6 階段操作紀錄、第 7 階段輸入驗證與錯誤處理均已完成；下一步為 v2 第 8 階段測試與 CI。 |
+| 第二版 v2 | 開發中 | v2 第 0 階段技術決策與安全邊界、第 1 階段 PostgreSQL 與 Prisma 基礎、第 2 階段 Better Auth 與 Database Session、第 3 階段 Record 新增與列表、第 4 階段 Record 查看、修改與刪除、第 5 階段使用者資料隔離、第 6 階段操作紀錄、第 7 階段輸入驗證與錯誤處理、第 8 階段 UI／UX 與作品展示品質改善均已完成；下一步為 v2 第 9 階段自動化測試與 CI。 |
 
 ### 環境檢查紀錄
 
@@ -623,7 +679,7 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 - 公開網址：`https://personal-data-management.vercel.app`
 - 已實際開啟公開網址，首頁 smoke test 通過。
 
-### 第二版 v2 第 0～7 階段 Git 與部署狀態
+### 第二版 v2 第 0～8 階段 Git 與部署狀態
 
 - v2 第 2 階段正式收尾完成後，`main` 與 `origin/main` 同步，並以 annotated tag `v2-stage-2` 標記 Better Auth 與 Database Session 完成狀態。
 - tag `v2-stage-0` 指向 commit `aca8047b64d9da396a424068c21d9c7a585e1a08`，訊息為「完成 v2 第 0 階段技術決策與安全邊界」。
@@ -633,10 +689,11 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 - v2 第 4 階段以 annotated tag `v2-stage-4` 標記 Record 查看、修改與刪除完成狀態，並於本階段收尾推送至遠端。
 - v2 第 5 階段以 annotated tag `v2-stage-5` 標記使用者資料隔離與人工越權驗收完成狀態，並於本階段收尾推送至遠端。
 - v2 第 6 階段以 annotated tag `v2-stage-6` 標記 Record 操作紀錄與 `/activity` 完成狀態，並於本階段收尾推送至遠端。
-- v2 第 7 階段功能實作與人工驗收已完成；本階段的 commit、push 與 `v2-stage-7` tag 尚未由使用者完成，因此目前不記錄為已建立或推送。
+- v2 第 7 階段以 commit `53d736bf6bc1fc5f6eb2878bceb5b61efd76c085` 完成 Git 封版；本機 `main`、`origin/main` 與 GitHub 遠端 `main` 已同步，annotated tag `v2-stage-7` 已建立並推送至遠端，且指向同一個 commit。
+- v2 第 8 階段功能實作、自動檢查與使用者人工驗收均已完成；本階段 commit、push 與 `v2-stage-8` tag 尚待使用者本人完成，因此目前不記錄為已建立或推送。
 - Vercel Production 已在加入 `postinstall` 修正後成功完成乾淨建置與部署。
 - 2026-08-12 公開網址再次驗證為 HTTP 200，首頁正常顯示。
-- v2 第 2 階段 production build 已在本機通過；正式環境 Auth 尚未配置雲端 PostgreSQL，因此 Production Auth／Database 流程尚未驗證，保留至 v2 第 9 階段。
+- v2 第 2 階段 production build 已在本機通過；正式環境 Auth 尚未配置雲端 PostgreSQL，因此 Production Auth／Database 流程尚未驗證，保留至 v2 第 10 階段。
 
 ### 第二版 v2 階段狀態
 
@@ -649,14 +706,16 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 | v2 第 4 階段 | 已完成 | Record 詳細頁、修改頁、Update／Delete Server Actions、刪除確認、統一 Not Found、成功／失敗狀態、人工驗收及 lint／build 均完成；tag `v2-stage-4` 於本階段收尾建立並推送。 |
 | v2 第 5 階段 | 已完成 | A／B 列表隔離、跨帳號 Read／Edit、Update／Delete Server Action 重播及反向越權驗收均通過；所有 Record 操作以有效 Session 的 `userId` 授權；tag `v2-stage-5` 於本階段收尾建立並推送。 |
 | v2 第 6 階段 | 已完成 | Record CREATE／UPDATE／DELETE 與 AuditLog 已使用 Prisma transaction 維持原子性；`/activity` 僅查詢目前登入者紀錄，A／B 隔離與失敗不留成功 Log 的人工驗收均通過；tag `v2-stage-6` 於本階段收尾建立並推送。 |
-| v2 第 7 階段 | 已完成 | Zod 4.4.3 direct dependency、純 Record Schema、Server-side input／recordId validation、安全錯誤處理與人工繞過 HTML validation 驗收均完成；Git commit、push 與 tag 尚待使用者本人收尾。 |
-| v2 第 8 階段 | 尚未開始／下一步 | 使用 Vitest 測試 Zod Schema 與純邏輯、使用 Playwright 測試主要流程與越權情境，並建立 GitHub Actions CI。 |
+| v2 第 7 階段 | 已完成 | Zod 4.4.3 direct dependency、純 Record Schema、Server-side input／recordId validation、安全錯誤處理與人工繞過 HTML validation 驗收均完成；commit 已推送，annotated tag `v2-stage-7` 已建立並推送。 |
+| v2 第 8 階段 | 已完成 | 全站共用 Layout、Header／Navbar、Footer、繁體中文為主的 UI、首頁作品入口、Auth／Records／Detail／Edit／Activity／狀態頁 presentation 及 Responsive 均完成；自動檢查與使用者人工驗收通過，Git 封版尚待使用者本人完成。 |
+| v2 第 9 階段 | 尚未開始／下一步 | 使用 Vitest 測試 Zod Schema 與純邏輯、使用 Playwright 測試主要流程與越權情境，並建立 GitHub Actions CI。 |
+| v2 第 10 階段 | 尚未開始 | 完成 README、雲端 PostgreSQL 與正式環境設定，沿用 Vercel Git Integration 完成正式環境與最終封版驗證。 |
 
 ### 第二版 v2 尚未完成項目
 
 - Record 新增、列表、詳細頁、修改、刪除與伺服器端使用者資料隔離均已完成；跨帳號 Read／Edit、Update／Delete Action 重播及反向越權人工驗收均已通過。
-- Vitest 與 Playwright 尚未安裝或建立測試，GitHub Actions CI Workflow 亦尚未建立，均留待 v2 第 8 階段「測試與 CI」。
-- 雲端 PostgreSQL 供應商仍為待決策；README、正式部署，以及正式環境 Auth／Database 驗證預定於 v2 第 9 階段處理。
+- Vitest 與 Playwright 尚未安裝或建立測試，GitHub Actions CI Workflow 亦尚未建立，均留待 v2 第 9 階段「自動化測試與 CI」。
+- 雲端 PostgreSQL 供應商仍為待決策；README、正式部署，以及正式環境 Auth／Database 驗證預定於 v2 第 10 階段處理。
 
 ## 12. 重要技術決策紀錄
 
@@ -673,13 +732,13 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 | 2026-08-06 | 將版本明確分為第一版 v1 與第二版 v2 | 第一版聚焦專案骨架及 GitHub／Vercel 驗證；第二版完成個人資料管理 MVP。 |
 | 2026-08-06 | 第一版 v1 標記為已完成 | GitHub 同步、Vercel Production Deployment 與公開首頁 smoke test 均已驗證。 |
 | 2026-08-07 | 本機開發採 Windows 直接安裝 PostgreSQL | 開發期間搭配 pgAdmin 與 Command Line Tools，資料庫預計命名為 `personal_data_management_dev`，資料目錄優先放在 D 槽；正式環境不連本機資料庫。 |
-| 2026-08-07 | 雲端 PostgreSQL 供應商維持待決策 | v2 第 9 階段再依免費額度、連線限制、Vercel 相容性與維護成本比較 Neon、Supabase、Prisma Postgres 或其他方案。 |
+| 2026-08-07 | 雲端 PostgreSQL 供應商維持待決策 | v2 第 10 階段再依免費額度、連線限制、Vercel 相容性與維護成本比較 Neon、Supabase、Prisma Postgres 或其他方案。 |
 | 2026-08-07 | 帳號驗證採 Better Auth | 第二版只實作 Email／Password 註冊、登入與登出，不做 OAuth、Email 驗證、忘記密碼或 2FA。 |
 | 2026-08-07 | Session 採資料庫 Session | 所有受保護頁面與資料操作都在伺服器端驗證 Session，不能只因 Cookie 存在就視為已登入。 |
 | 2026-08-07 | 密碼雜湊採 Better Auth 預設方案 | 不自行實作 SHA-256、bcrypt、Argon2id 或第二層雜湊，且不保存或記錄明文密碼與驗證機密。 |
 | 2026-08-07 | 輸入驗證採 Zod 穩定版 | 前端驗證改善體驗，伺服器端 Zod 驗證是進入業務邏輯與資料庫前的必要檢查。 |
 | 2026-08-07 | 確定 Server Components、Server Actions 與 Route Handlers 分工 | Server Components 負責讀取，Server Actions 負責網站內部異動，Route Handlers 只處理 Better Auth 與必要 HTTP API，不建立重複的 `/api/records` CRUD。 |
-| 2026-08-07 | 測試採階段性人工驗證、Vitest 與 Playwright | 每階段執行人工驗證、lint、build；v2 第 8 階段以 Vitest 測試 Schema／純邏輯，以 Playwright 測試主要流程與越權情境。 |
+| 2026-08-07 | 測試採階段性人工驗證、Vitest 與 Playwright | 每階段執行人工驗證、lint、build；v2 第 9 階段以 Vitest 測試 Schema／純邏輯，以 Playwright 測試主要流程與越權情境。 |
 | 2026-08-07 | 確定機密資料與 Git 安全規則 | 本機機密不得提交 Git、Repository 只提供無真實值的 `.env.example`、正式機密放 Vercel Environment Variables，並落實資料擁有權及錯誤訊息安全；實際環境檔格式於第 1 階段依 Prisma 7 確認。 |
 | 2026-08-12 | v2 第 1 階段採 PostgreSQL 18.4 與 Prisma 7.9.1 完成落地 | 已建立本機開發資料庫、初始 Schema、Migration、Prisma Client 與共用 singleton Client，並以 Prisma migration status 確認資料庫為最新。 |
 | 2026-08-12 | Prisma 7 本機環境採 `.env` 與 `prisma.config.ts` | 這是目前實際實作；`.env` 受 Git 忽略，Repository 僅追蹤不含真實值的 `.env.example`，不強制改回原規劃的 `.env.local`。 |
@@ -695,14 +754,18 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 | 2026-08-14 | v2 第 3 階段標記為完成 | Server Action、新增表單、目前使用者 Record 列表、最小伺服器端驗證、Prisma 檢查、lint、production build 與資料隔離驗收均已完成；詳細頁、修改與刪除留待第 4 階段。 |
 | 2026-08-14 | v2 第 4 階段 Read／Update／Delete 均使用 `recordId + session.user.id` 授權 | 詳細與修改頁在 Server Component 讀取時同時限制 Record ID 與有效 Session 使用者；更新與刪除 Server Actions 以同一組條件執行 `updateMany`／`deleteMany`，不信任 Client 提供的 `userId`。 |
 | 2026-08-14 | v2 第 4 階段標記為完成 | 詳細頁、修改頁、刪除確認、統一 Not Found、成功／失敗提示、人工驗收、Prisma 檢查、lint 與 production build 均已完成；完整跨帳號越權測試留待第 5 階段。 |
-| 2026-08-15 | CI／CD 責任分工採 GitHub Actions CI 與 Vercel Git Integration CD | v2 第 8 階段建立 GitHub Actions 自動執行 lint、Vitest 與主要流程測試，並依實際設計安排 TypeScript／production build；部署沿用既有 Vercel Git Integration，不建立重複的 GitHub Actions Deployment Pipeline，正式環境資料庫與機密設定留待第 9 階段。 |
+| 2026-08-15 | CI／CD 責任分工採 GitHub Actions CI 與 Vercel Git Integration CD | v2 第 9 階段建立 GitHub Actions 自動執行 lint、Vitest 與主要流程測試，並依實際設計安排 TypeScript／production build；部署沿用既有 Vercel Git Integration，不建立重複的 GitHub Actions Deployment Pipeline，正式環境資料庫與機密設定留待第 10 階段。 |
 | 2026-08-15 | v2 第 5 階段以跨帳號 Action 重播驗證 Server-side ownership | 除網址竄改外，將合法 Update／Delete Server Action request 改由另一個有效使用者 Session 重播，確認 `recordId + session.user.id` 條件會阻擋跨帳號異動，且測試請求不保存或轉移原 Session 機密。 |
 | 2026-08-15 | v2 第 5 階段標記為完成 | A／B 列表隔離、雙向 Read／Edit、Update／Delete Action 重播均通過；安全審查未發現需修改的程式碼，下一步為第 6 階段 `AuditLog`。 |
 | 2026-08-16 | Record 異動與 AuditLog 採同一個 Prisma transaction | CREATE／UPDATE／DELETE 只有在目前使用者的 Record 異動成功時才寫入 `Record:<recordId>` AuditLog；`userId` 只來自有效 Session，並且不記錄 Record 完整內容或驗證機密。 |
 | 2026-08-16 | v2 第 6 階段標記為完成 | `/activity` 只在 Database Query 層查詢目前登入者的 AuditLog；CREATE／UPDATE／DELETE、刪除後 Log 保留、排序、A／B 隔離、失敗不留成功 Log 與未登入保護均通過人工驗收，下一步為第 7 階段輸入驗證與錯誤處理。 |
-| 2026-08-17 | Zod 4.4.3 正式作為 direct dependency | 已建立純 `src/lib/validation/record.ts` 模組，統一 Record title、content 與 CUID recordId 的 runtime validation，並可在 v2 第 8 階段直接使用 Vitest 測試。 |
+| 2026-08-17 | Zod 4.4.3 正式作為 direct dependency | 已建立純 `src/lib/validation/record.ts` 模組，統一 Record title、content 與 CUID recordId 的 runtime validation，並可在 v2 第 9 階段直接使用 Vitest 測試。 |
 | 2026-08-17 | Server-side Zod 成為 Record 輸入進入 Prisma 前的 runtime validation boundary | TypeScript、Prisma 與 HTML `required`／`maxLength` 均不能取代 Server-side validation；人工繞過 Client 限制後，Zod 仍能阻擋空白或超長輸入，且不產生假的成功 AuditLog。 |
-| 2026-08-17 | v2 第 7 階段標記為完成 | Record input／recordId Zod validation、安全錯誤分類、ownership 與 AuditLog 回歸均通過人工驗收；下一步為第 8 階段 Vitest、Playwright 與 GitHub Actions CI，Git commit、push 與 tag 尚待使用者本人收尾。 |
+| 2026-08-17 | v2 第 7 階段標記為完成 | Record input／recordId Zod validation、安全錯誤分類、ownership 與 AuditLog 回歸均通過人工驗收；commit `53d736bf6bc1fc5f6eb2878bceb5b61efd76c085` 已推送，annotated tag `v2-stage-7` 已建立並推送，下一步為新增的第 8 階段 UI／UX 與作品展示品質改善。 |
+| 2026-08-17 | 在自動化測試與 CI 前新增 UI／UX 階段 | 先將網站介面與求職作品展示品質定型，再針對接近最終版本的 UI 與功能建立自動化測試；原測試與 CI、文件與正式環境驗證依序順延為 v2 第 9、10 階段。 |
+| 2026-08-18 | v2 第 8 階段採共用 presentation 架構完成 UI／UX 收斂 | Root Layout 統一整合 Header、主要內容區與 Footer，並以既有 Tailwind CSS 整理全站繁體中文介面、元件視覺與實用級 Responsive；未新增 UI Library、動畫框架或其他 dependency。 |
+| 2026-08-18 | UI 改造不變更核心功能與安全邊界 | Better Auth、Database Session、Server-side ownership、Record Server Actions、AuditLog transaction、Zod validation、Prisma Schema／Migration 與 Route 架構均維持不變；桌面與約 360px 顯示、主要功能及安全回歸均通過人工驗收。 |
+| 2026-08-18 | v2 第 8 階段標記為完成 | UI／UX 實作、自動檢查與使用者人工驗收均已完成；Git commit、push 與 `v2-stage-8` tag 尚待使用者本人完成，下一步為 v2 第 9 階段自動化測試與 CI。 |
 
 ## 13. 測試、啟動與公開網址
 

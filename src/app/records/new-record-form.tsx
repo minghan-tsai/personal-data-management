@@ -26,29 +26,30 @@ export function NewRecordForm() {
   return (
     <form ref={formRef} action={formAction} className="mt-6 space-y-5">
       <div>
-        <label className="mb-2 block text-sm font-semibold text-slate-700" htmlFor="title">
+        <label className="field-label" htmlFor="title">
           標題
         </label>
         <input
-          className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+          className="field-control"
           id="title"
           maxLength={120}
           name="title"
+          placeholder="輸入紀錄標題"
           required
           type="text"
         />
       </div>
 
       <div>
-        <label className="mb-2 block text-sm font-semibold text-slate-700" htmlFor="content">
+        <label className="field-label" htmlFor="content">
           內容
         </label>
         <textarea
-          className="min-h-32 w-full resize-y rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+          className="field-control min-h-36 resize-y"
           id="content"
           maxLength={2000}
           name="content"
-          placeholder="可留空"
+          placeholder="補充內容（可留空）"
         />
       </div>
 
@@ -56,8 +57,8 @@ export function NewRecordForm() {
         <p
           className={
             state.status === "error"
-              ? "rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700"
-              : "rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700"
+              ? "status-message status-error"
+              : "status-message status-success"
           }
           role={state.status === "error" ? "alert" : "status"}
         >
@@ -66,7 +67,7 @@ export function NewRecordForm() {
       ) : null}
 
       <button
-        className="rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
+        className="button button-primary w-full sm:w-auto"
         disabled={isPending}
         type="submit"
       >

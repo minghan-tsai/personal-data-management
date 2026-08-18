@@ -44,49 +44,58 @@ export default async function RecordDetailPage({
   }
 
   return (
-    <main className="min-h-screen px-6 py-12 sm:py-16">
-      <article className="mx-auto w-full max-w-3xl rounded-3xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/60 sm:p-10">
-        <p className="text-sm font-semibold tracking-[0.18em] text-emerald-700">RECORD DETAILS</p>
-        <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">{record.title}</h1>
+    <main className="page-shell-narrow">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <Link className="button button-secondary" href="/records">
+          返回紀錄列表
+        </Link>
+        <Link className="button button-primary" href={`/records/${record.id}/edit`}>
+          修改紀錄
+        </Link>
+      </div>
 
-        <div className="mt-8 rounded-2xl bg-slate-50 p-6">
-          <h2 className="text-sm font-semibold text-slate-500">內容</h2>
-          <p className="mt-3 whitespace-pre-wrap leading-8 text-slate-700">
+      <article className="panel overflow-hidden">
+        <header className="border-b border-slate-200 p-7 sm:p-9">
+          <h1 className="text-3xl font-bold tracking-tight text-slate-950">紀錄詳情</h1>
+        </header>
+
+        <div className="p-7 sm:p-9">
+          <h2 className="break-words text-2xl font-bold tracking-tight text-slate-950">{record.title}</h2>
+          <section aria-labelledby="record-content-title">
+            <h3 className="mt-7 text-sm font-bold text-slate-500" id="record-content-title">
+              內容
+            </h3>
+            <p className="mt-3 whitespace-pre-wrap break-words leading-8 text-slate-700">
             {record.content || "（無內容）"}
-          </p>
-        </div>
+            </p>
+          </section>
 
-        <dl className="mt-8 grid gap-4 text-sm sm:grid-cols-2">
-          <div className="rounded-2xl border border-slate-200 p-4">
-            <dt className="font-semibold text-slate-500">建立時間</dt>
-            <dd className="mt-2 text-slate-800">
-              <time dateTime={record.createdAt.toISOString()}>{formatDateTime(record.createdAt)}</time>
-            </dd>
-          </div>
-          <div className="rounded-2xl border border-slate-200 p-4">
-            <dt className="font-semibold text-slate-500">最後更新</dt>
-            <dd className="mt-2 text-slate-800">
-              <time dateTime={record.updatedAt.toISOString()}>{formatDateTime(record.updatedAt)}</time>
-            </dd>
-          </div>
-        </dl>
-
-        <div className="mt-8 flex flex-col gap-3 border-t border-slate-200 pt-8 sm:flex-row sm:items-start">
-          <Link
-            className="rounded-xl border border-slate-300 px-5 py-3 text-center font-semibold text-slate-700 transition hover:bg-slate-50"
-            href="/records"
-          >
-            返回資料列表
-          </Link>
-          <Link
-            className="rounded-xl bg-blue-700 px-5 py-3 text-center font-semibold text-white transition hover:bg-blue-800"
-            href={`/records/${record.id}/edit`}
-          >
-            修改資料
-          </Link>
-          <DeleteRecordButton recordId={record.id} />
+          <dl className="mt-8 grid gap-4 border-t border-slate-200 pt-6 text-sm sm:grid-cols-2">
+            <div>
+              <dt className="font-semibold text-slate-500">建立時間</dt>
+              <dd className="mt-1.5 text-slate-800">
+                <time dateTime={record.createdAt.toISOString()}>{formatDateTime(record.createdAt)}</time>
+              </dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-slate-500">最後更新</dt>
+              <dd className="mt-1.5 text-slate-800">
+                <time dateTime={record.updatedAt.toISOString()}>{formatDateTime(record.updatedAt)}</time>
+              </dd>
+            </div>
+          </dl>
         </div>
       </article>
+
+      <section className="mt-6 rounded-xl border border-red-200 bg-red-50 p-5 sm:flex sm:items-center sm:justify-between sm:gap-6">
+        <div>
+          <h2 className="font-bold text-red-950">刪除這筆紀錄</h2>
+          <p className="mt-1 text-sm leading-6 text-red-800">此操作無法復原，送出前會再次要求確認。</p>
+        </div>
+        <div className="mt-4 shrink-0 sm:mt-0">
+          <DeleteRecordButton recordId={record.id} />
+        </div>
+      </section>
     </main>
   );
 }
