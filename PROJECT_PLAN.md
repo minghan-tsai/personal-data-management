@@ -600,7 +600,7 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 - 正常新增 Record、空白 title Server-side validation、Record List、Record Detail、Edit／Update、Delete confirm 取消與確認、Activity CREATE／UPDATE／DELETE 顯示均通過。
 - 無效 Record ID 維持一般化 Not Found，沒有 HTTP 500 或內部資訊洩漏；跨帳號 Record 存取仍受 Server-side ownership／Authorization 保護。
 - 桌面與約 360px 寬度 Responsive、無水平 overflow 及 Footer 顯示均通過。
-- 第 8 階段功能實作、自動檢查與人工驗收已完成；Git commit、push 與 `v2-stage-8` tag 尚待使用者本人完成，目前不得記錄為已建立或推送。
+- 第 8 階段功能實作、自動檢查、人工驗收與 Git 封版均已完成；完成 commit `4ccbdce1553b9581507936d4b38819244ec8ffe7` 已推送至 GitHub，annotated tag `v2-stage-8` 已建立並推送，且指向同一個 commit。
 
 ### v2 第 9 階段：自動化測試與 CI
 
@@ -633,7 +633,7 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 | 版本 | 狀態 | 說明 |
 | --- | --- | --- |
 | 第一版 v1 | 已完成 | Next.js 骨架、首頁、lint、build、GitHub 首次推送、本機與遠端同步、Vercel Production Deployment 及公開首頁 smoke test 均已完成。 |
-| 第二版 v2 | 開發中 | v2 第 0 階段技術決策與安全邊界、第 1 階段 PostgreSQL 與 Prisma 基礎、第 2 階段 Better Auth 與 Database Session、第 3 階段 Record 新增與列表、第 4 階段 Record 查看、修改與刪除、第 5 階段使用者資料隔離、第 6 階段操作紀錄、第 7 階段輸入驗證與錯誤處理、第 8 階段 UI／UX 與作品展示品質改善均已完成；下一步為 v2 第 9 階段自動化測試與 CI。 |
+| 第二版 v2 | 開發中 | v2 第 0 階段技術決策與安全邊界、第 1 階段 PostgreSQL 與 Prisma 基礎、第 2 階段 Better Auth 與 Database Session、第 3 階段 Record 新增與列表、第 4 階段 Record 查看、修改與刪除、第 5 階段使用者資料隔離、第 6 階段操作紀錄、第 7 階段輸入驗證與錯誤處理、第 8 階段 UI／UX 與作品展示品質改善均已完成；第 8 階段 commit 已同步至 GitHub 並以 annotated tag `v2-stage-8` 封版，下一步為 v2 第 9 階段自動化測試與 CI。 |
 
 ### 環境檢查紀錄
 
@@ -690,7 +690,7 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 - v2 第 5 階段以 annotated tag `v2-stage-5` 標記使用者資料隔離與人工越權驗收完成狀態，並於本階段收尾推送至遠端。
 - v2 第 6 階段以 annotated tag `v2-stage-6` 標記 Record 操作紀錄與 `/activity` 完成狀態，並於本階段收尾推送至遠端。
 - v2 第 7 階段以 commit `53d736bf6bc1fc5f6eb2878bceb5b61efd76c085` 完成 Git 封版；本機 `main`、`origin/main` 與 GitHub 遠端 `main` 已同步，annotated tag `v2-stage-7` 已建立並推送至遠端，且指向同一個 commit。
-- v2 第 8 階段功能實作、自動檢查與使用者人工驗收均已完成；本階段 commit、push 與 `v2-stage-8` tag 尚待使用者本人完成，因此目前不記錄為已建立或推送。
+- v2 第 8 階段以 commit `4ccbdce1553b9581507936d4b38819244ec8ffe7` 完成 Git 封版；本機 `main`、`origin/main` 與 GitHub 遠端 `main` 已同步，annotated tag `v2-stage-8` 已建立並推送至遠端，且指向同一個 commit。
 - Vercel Production 已在加入 `postinstall` 修正後成功完成乾淨建置與部署。
 - 2026-08-12 公開網址再次驗證為 HTTP 200，首頁正常顯示。
 - v2 第 2 階段 production build 已在本機通過；正式環境 Auth 尚未配置雲端 PostgreSQL，因此 Production Auth／Database 流程尚未驗證，保留至 v2 第 10 階段。
@@ -707,7 +707,7 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 | v2 第 5 階段 | 已完成 | A／B 列表隔離、跨帳號 Read／Edit、Update／Delete Server Action 重播及反向越權驗收均通過；所有 Record 操作以有效 Session 的 `userId` 授權；tag `v2-stage-5` 於本階段收尾建立並推送。 |
 | v2 第 6 階段 | 已完成 | Record CREATE／UPDATE／DELETE 與 AuditLog 已使用 Prisma transaction 維持原子性；`/activity` 僅查詢目前登入者紀錄，A／B 隔離與失敗不留成功 Log 的人工驗收均通過；tag `v2-stage-6` 於本階段收尾建立並推送。 |
 | v2 第 7 階段 | 已完成 | Zod 4.4.3 direct dependency、純 Record Schema、Server-side input／recordId validation、安全錯誤處理與人工繞過 HTML validation 驗收均完成；commit 已推送，annotated tag `v2-stage-7` 已建立並推送。 |
-| v2 第 8 階段 | 已完成 | 全站共用 Layout、Header／Navbar、Footer、繁體中文為主的 UI、首頁作品入口、Auth／Records／Detail／Edit／Activity／狀態頁 presentation 及 Responsive 均完成；自動檢查與使用者人工驗收通過，Git 封版尚待使用者本人完成。 |
+| v2 第 8 階段 | 已完成 | 全站共用 Layout、Header／Navbar、Footer、繁體中文為主的 UI、首頁作品入口、Auth／Records／Detail／Edit／Activity／狀態頁 presentation 及 Responsive 均完成；自動檢查與使用者人工驗收通過，commit 已推送，annotated tag `v2-stage-8` 已建立並推送。 |
 | v2 第 9 階段 | 尚未開始／下一步 | 使用 Vitest 測試 Zod Schema 與純邏輯、使用 Playwright 測試主要流程與越權情境，並建立 GitHub Actions CI。 |
 | v2 第 10 階段 | 尚未開始 | 完成 README、雲端 PostgreSQL 與正式環境設定，沿用 Vercel Git Integration 完成正式環境與最終封版驗證。 |
 
@@ -765,7 +765,7 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 | 2026-08-17 | 在自動化測試與 CI 前新增 UI／UX 階段 | 先將網站介面與求職作品展示品質定型，再針對接近最終版本的 UI 與功能建立自動化測試；原測試與 CI、文件與正式環境驗證依序順延為 v2 第 9、10 階段。 |
 | 2026-08-18 | v2 第 8 階段採共用 presentation 架構完成 UI／UX 收斂 | Root Layout 統一整合 Header、主要內容區與 Footer，並以既有 Tailwind CSS 整理全站繁體中文介面、元件視覺與實用級 Responsive；未新增 UI Library、動畫框架或其他 dependency。 |
 | 2026-08-18 | UI 改造不變更核心功能與安全邊界 | Better Auth、Database Session、Server-side ownership、Record Server Actions、AuditLog transaction、Zod validation、Prisma Schema／Migration 與 Route 架構均維持不變；桌面與約 360px 顯示、主要功能及安全回歸均通過人工驗收。 |
-| 2026-08-18 | v2 第 8 階段標記為完成 | UI／UX 實作、自動檢查與使用者人工驗收均已完成；Git commit、push 與 `v2-stage-8` tag 尚待使用者本人完成，下一步為 v2 第 9 階段自動化測試與 CI。 |
+| 2026-08-18 | v2 第 8 階段標記為完成 | UI／UX 實作、自動檢查、使用者人工驗收及 Git 封版均已完成；commit `4ccbdce1553b9581507936d4b38819244ec8ffe7` 已推送至 `origin/main`，annotated tag `v2-stage-8` 已建立並推送且指向同一個 commit，下一步為 v2 第 9 階段自動化測試與 CI。 |
 
 ## 13. 測試、啟動與公開網址
 
