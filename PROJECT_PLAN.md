@@ -631,7 +631,16 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 - implementation commit `45c4789284a681bb4bcc259201934dcffca9684c`（`test: add automated tests and CI workflow`）已推送至 `origin/main`；GitHub Actions push run `32145903590` 實際執行並成功完成，`CI / Lint, test, and build (push)` 為 Successful。
 - 同一 implementation commit 觸發的 Vercel Deployment 為 Successful；GitHub Actions 僅負責 CI，Vercel Git Integration 繼續負責 CD／Deployment，未建立重複的 GitHub Actions Deployment Pipeline。
 - v2 第 9 階段 Vitest、Playwright、CI 實作、本機驗證與 GitHub runner 實際驗證均已完成；第 10 階段仍保留 README、雲端 PostgreSQL、正式環境 Auth／Database 與最終部署驗證。
-- 第 9 階段以通過 GitHub Actions 的文件收尾 commit 作為正式封版基準，並以 annotated tag `v2-stage-9` 標記。
+- docs 收尾 commit `280aacd68958a8305a9041ff6c2b3c3e5c8005aa`（`docs: complete v2 stage 9`）的 GitHub Actions 已 `completed / success`；annotated tag `v2-stage-9` 已建立並推送，且指向同一個 commit。tag push 額外觸發的 GitHub Actions 亦已成功完成。
+
+使用者人工驗收：
+
+- 使用者本人執行 `npm.cmd run test`，確認 Test Files 為 1 passed／1、Tests 為 18 passed／18，沒有 failed，指令正常結束並返回 PowerShell prompt。
+- 使用者本人執行 `npm.cmd run test:e2e`，確認 Chromium 3 tests passed，未登入 Protected Route、Authentication／Record CRUD／Activity，以及 A／B 帳號資料隔離與越權防護均通過，沒有 failed，指令正常結束並返回 PowerShell prompt。
+- 使用者本人已進入 GitHub Actions UI，確認 implementation commit、docs 收尾 commit 與 `v2-stage-9` tag push 的 CI 均為綠勾。
+- `Lint, test, and build` job 的 Initialize containers、Checkout repository、Set up Node.js、Install dependencies and generate Prisma Client、Validate Prisma schema、Apply Prisma migrations、Run lint、Run unit tests、Build application、Install Playwright Chromium 與 Run E2E tests 均成功。
+- `Upload Playwright failure screenshots` 因 E2E 成功而 skip，符合僅在失敗時上傳 screenshot 的設計，不屬於失敗。
+- v2 第 9 階段使用者人工驗收正式通過。
 
 ### v2 第 10 階段：文件與正式環境驗證
 
@@ -711,7 +720,7 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 - v2 第 6 階段以 annotated tag `v2-stage-6` 標記 Record 操作紀錄與 `/activity` 完成狀態，並於本階段收尾推送至遠端。
 - v2 第 7 階段以 commit `53d736bf6bc1fc5f6eb2878bceb5b61efd76c085` 完成 Git 封版；本機 `main`、`origin/main` 與 GitHub 遠端 `main` 已同步，annotated tag `v2-stage-7` 已建立並推送至遠端，且指向同一個 commit。
 - v2 第 8 階段以 commit `4ccbdce1553b9581507936d4b38819244ec8ffe7` 完成 Git 封版；本機 `main`、`origin/main` 與 GitHub 遠端 `main` 已同步，annotated tag `v2-stage-8` 已建立並推送至遠端，且指向同一個 commit。
-- v2 第 9 階段 implementation commit `45c4789284a681bb4bcc259201934dcffca9684c` 已推送至 GitHub；GitHub Actions push run `32145903590` 的 `CI / Lint, test, and build (push)` 已成功完成，Vercel Deployment 亦為 Successful。文件收尾 commit 必須通過 GitHub Actions 後，才以 annotated tag `v2-stage-9` 封版。
+- v2 第 9 階段 implementation commit `45c4789284a681bb4bcc259201934dcffca9684c` 已推送至 GitHub；GitHub Actions push run `32145903590` 的 `CI / Lint, test, and build (push)` 已成功完成，Vercel Deployment 亦為 Successful。docs 收尾 commit `280aacd68958a8305a9041ff6c2b3c3e5c8005aa`（`docs: complete v2 stage 9`）及其 GitHub Actions 均已完成，annotated tag `v2-stage-9` 已建立並推送且指向該 docs commit；tag push CI 亦為 success。
 - Vercel Production 已在加入 `postinstall` 修正後成功完成乾淨建置與部署。
 - 2026-08-12 公開網址再次驗證為 HTTP 200，首頁正常顯示。
 - v2 第 2 階段 production build 已在本機通過；正式環境 Auth 尚未配置雲端 PostgreSQL，因此 Production Auth／Database 流程尚未驗證，保留至 v2 第 10 階段。
@@ -729,7 +738,7 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 | v2 第 6 階段 | 已完成 | Record CREATE／UPDATE／DELETE 與 AuditLog 已使用 Prisma transaction 維持原子性；`/activity` 僅查詢目前登入者紀錄，A／B 隔離與失敗不留成功 Log 的人工驗收均通過；tag `v2-stage-6` 於本階段收尾建立並推送。 |
 | v2 第 7 階段 | 已完成 | Zod 4.4.3 direct dependency、純 Record Schema、Server-side input／recordId validation、安全錯誤處理與人工繞過 HTML validation 驗收均完成；commit 已推送，annotated tag `v2-stage-7` 已建立並推送。 |
 | v2 第 8 階段 | 已完成 | 全站共用 Layout、Header／Navbar、Footer、繁體中文為主的 UI、首頁作品入口、Auth／Records／Detail／Edit／Activity／狀態頁 presentation 及 Responsive 均完成；自動檢查與使用者人工驗收通過，commit 已推送，annotated tag `v2-stage-8` 已建立並推送。 |
-| v2 第 9 階段 | 已完成 | Vitest 18 個 Record Zod Schema 測試、Playwright Chromium 3 個主要 E2E 流程、PostgreSQL 18 CI service 與 GitHub Actions Workflow 均已完成；implementation commit 的 GitHub runner 實際驗證成功，文件收尾 commit 通過 CI 後才建立 annotated tag `v2-stage-9`。 |
+| v2 第 9 階段 | 已完成 | Vitest 18 個 Record Zod Schema 測試、Playwright Chromium 3 個主要 E2E 流程、PostgreSQL 18 CI service 與 GitHub Actions Workflow 均已完成；implementation、docs 與 tag push CI 均成功，使用者人工驗收通過，annotated tag `v2-stage-9` 已建立並推送且指向 docs 收尾 commit `280aacd68958a8305a9041ff6c2b3c3e5c8005aa`。 |
 | v2 第 10 階段 | 尚未開始／下一步 | 完成 README、雲端 PostgreSQL 與正式環境設定，沿用 Vercel Git Integration 完成正式環境與最終封版驗證。 |
 
 ### 第二版 v2 尚未完成項目
@@ -787,7 +796,7 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 | 2026-08-18 | v2 第 8 階段標記為完成 | UI／UX 實作、自動檢查、使用者人工驗收及 Git 封版均已完成；commit `4ccbdce1553b9581507936d4b38819244ec8ffe7` 已推送至 `origin/main`，annotated tag `v2-stage-8` 已建立並推送且指向同一個 commit；後續 v2 第 9 階段自動化測試與 CI 亦已完成。 |
 | 2026-08-18 | v2 第 9 階段採 Vitest 與 Playwright 建立自動化測試 | Vitest 直接測試 production Record Zod Schema，18 個案例全部通過；Playwright 僅使用 Chromium，以 3 個主要 E2E 案例涵蓋 Protected Route、Authentication、CRUD、Activity 與 A／B 使用者資料隔離，並使用唯一虛構測試資料。 |
 | 2026-08-18 | GitHub Actions CI 使用臨時 PostgreSQL 18 service | Workflow 在 `push`／`pull_request` 時以 Node.js 24.18.0 執行 Prisma Client generation、validate、`migrate deploy`、lint、Vitest、production build／TypeScript 與 Playwright；CI 使用隔離虛構環境值，不需要 Production Secrets。 |
-| 2026-08-18 | v2 第 9 階段標記為完成 | implementation commit `45c4789284a681bb4bcc259201934dcffca9684c` 的 GitHub Actions push run 已成功；GitHub Actions 僅負責 CI，Vercel Git Integration 繼續負責 CD。文件收尾 commit 必須通過 CI 後才建立 annotated tag `v2-stage-9`，下一步為第 10 階段文件與正式環境驗證。 |
+| 2026-08-18 | v2 第 9 階段標記為完成 | implementation commit、docs 收尾 commit `280aacd68958a8305a9041ff6c2b3c3e5c8005aa` 與 `v2-stage-9` tag push 的 GitHub Actions 均成功，使用者人工驗收亦已通過；annotated tag 已建立並推送且指向 docs 收尾 commit。GitHub Actions 僅負責 CI，Vercel Git Integration 繼續負責 CD，下一步為第 10 階段文件與正式環境驗證。 |
 
 ## 13. 測試、啟動與公開網址
 
