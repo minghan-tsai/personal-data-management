@@ -33,7 +33,7 @@
 
 第二版 v2 的目標是在第一版骨架與部署流程上，完成具備 PostgreSQL、Prisma、帳號驗證、個人紀錄 CRUD、使用者資料隔離、輸入驗證、錯誤處理、操作紀錄及測試的 MVP。
 
-狀態：**開發中**。v2 第 0～9 階段已完成，下一步為 v2 第 10 階段「文件與正式環境驗證」。
+狀態：**已完成**。v2 第 0～10 階段已於 2026-08-19 全部完成，包含正式環境 PostgreSQL、Vercel Production Deployment 與使用者人工驗收。
 
 第二版必須依階段執行；尚未決定的技術事項需先完成決策與記錄，不在計畫階段擅自選定。
 
@@ -84,7 +84,7 @@
 | 程式語言 | TypeScript | 提供型別檢查，降低欄位與資料流錯誤，符合常見企業開發方式。 |
 | 程式碼檢查 | ESLint | 在開發階段提早發現常見程式碼問題。 |
 | 樣式 | Tailwind CSS | 可快速建立簡潔一致的介面，不需額外 UI 元件庫。 |
-| 資料庫 | PostgreSQL 18 | Windows 本機開發環境已安裝 PostgreSQL 18；正式環境未來使用部署環境可連線的 PostgreSQL，不依賴本機 `localhost`。 |
+| 資料庫 | PostgreSQL 18／Neon PostgreSQL | Windows 本機開發使用 PostgreSQL 18；正式環境使用 Vercel Marketplace 建立的 Neon PostgreSQL Production resource，不依賴本機 `localhost`。 |
 | ORM／Database Toolkit | Prisma 7.9.1 | 已用於 PostgreSQL 資料存取、Schema、Migration 與 Prisma Client 產生。 |
 | 身分驗證 | Better Auth 1.6.27（已實作） | 已完成 Email／Password 註冊、登入與登出；不做 OAuth、Email 驗證、忘記密碼或 2FA。 |
 | Session 策略 | 資料庫 Session（已實作） | Session 儲存於 PostgreSQL；受保護頁面在伺服器端驗證有效 Session，不能只因 Cookie 存在就視為已登入。 |
@@ -95,7 +95,7 @@
 | 套件管理 | npm | Node.js 隨附、文件普遍，適合初學者。 |
 | 部署／CD | Vercel Git Integration（第一版已採用） | GitHub Repository 作為版本來源，Vercel 負責乾淨環境安裝、既有 `postinstall: prisma generate`、Production Build 與 Deployment；不另建重複的 GitHub Actions CD Pipeline。 |
 | 本機 PostgreSQL 開發方式 | Windows 本機直接安裝（已完成） | PostgreSQL 18、pgAdmin 4 與 Command Line Tools 已安裝於 D 槽，開發資料庫已建立。 |
-| 雲端資料庫供應商 | 待決策 | v2 第 10 階段再比較 Neon、Supabase、Prisma Postgres 或其他託管 PostgreSQL。 |
+| 雲端資料庫供應商 | Neon PostgreSQL（已完成） | 透過 Vercel Marketplace 建立 Production resource，採 Singapore（Southeast）Region 與 Free Plan，並連接 Vercel Project；Neon Auth 未啟用，身分驗證仍使用既有 Better Auth。 |
 
 ### `src` 資料夾決策
 
@@ -114,10 +114,10 @@
 
 #### 2. 雲端 PostgreSQL
 
-- 雲端 PostgreSQL 供應商維持待決策，第 0 階段不指定供應商。
+- 第 0 階段原先保留雲端 PostgreSQL 供應商待決策，不提前綁定平台。
 - 開發期間使用本機 PostgreSQL。
-- v2 第 10 階段再比較 Neon、Supabase、Prisma Postgres 或其他託管 PostgreSQL。
-- 屆時依免費額度、連線限制、Vercel 相容性與維護成本決定。
+- v2 第 10 階段實際選用 Neon PostgreSQL，透過 Vercel Marketplace 建立 Production resource。
+- Production 採 Singapore（Southeast）Region 與 Free Plan；Neon Integration 已建立 Production Database environment variables，且未啟用 Neon Auth。
 
 #### 3. Auth
 
@@ -182,7 +182,7 @@
 - GitHub Actions 負責 CI；v2 第 9 階段已建立 Workflow，自動執行 Prisma、lint、Vitest、production build／TypeScript 與 Playwright Chromium E2E，且 GitHub runner 實際驗證已通過。
 - Vercel Git Integration 負責 CD／Deployment，GitHub Repository 作為版本來源；Vercel 在乾淨環境安裝套件、執行既有 `postinstall: prisma generate`、Production Build 與 Deployment。
 - 本專案不另外建立 GitHub Actions Deployment Pipeline，避免與 Vercel Git Integration 重複。
-- 正式環境 Environment Variables、雲端 PostgreSQL 供應商與 Production Auth／Database 驗證仍留待 v2 第 10 階段。
+- v2 第 10 階段已完成 Neon Production PostgreSQL、Vercel Production Environment Variables、Prisma migration、Production Auth／Database 流程與正式網址驗證。
 
 ## 7. 頁面規劃
 
@@ -322,9 +322,9 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 
 ## 10. 第二版 v2 分階段執行順序
 
-第二版 v2 已進入開發流程，v2 第 0～9 階段已完成，下一步為 v2 第 10 階段「文件與正式環境驗證」，也是 v2 最終收尾階段。以下階段必須依序進行；每階段開始前先說明目的，完成後記錄修改檔案、主要程式碼、啟動方式與測試結果。
+第二版 v2 已依序完成第 0～10 階段；第 10 階段「文件與正式環境驗證」為 v2 最終收尾階段。各階段均在開始前說明目的，並於完成後記錄修改檔案、主要程式碼、啟動方式與測試結果。
 
-後續開發順序為：v2 第 0～8 階段核心功能、安全性、操作紀錄、輸入驗證、錯誤處理及 UI／UX 與求職作品展示品質改善已完成 → v2 第 9 階段自動化測試與 CI 已完成 → v2 第 10 階段完成文件、正式環境與最終封版驗證。
+實際完成順序為：v2 第 0～8 階段核心功能、安全性、操作紀錄、輸入驗證、錯誤處理及 UI／UX 與求職作品展示品質改善 → v2 第 9 階段自動化測試與 CI → v2 第 10 階段文件、正式環境與最終封版驗證。
 
 ### v2 第 0 階段：確認待決策事項與安全邊界
 
@@ -339,7 +339,7 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 - 已決定以單元與整合／流程測試為主，每階段執行人工驗證、lint、build，後續再逐步加入測試。
 - 已完成 `User`、`Record`／`PersonalRecord` 與 `AuditLog` 的概念草圖及資料擁有權方向。
 - 已記錄機密資料、Git、資料擁有權、錯誤訊息與 `AuditLog` 安全規則。
-- 雲端 PostgreSQL 供應商仍為待決策，延至 v2 第 10 階段評估。
+- 第 0 階段當時將雲端 PostgreSQL 供應商保留至 v2 第 10 階段評估；第 10 階段已實際選用 Neon PostgreSQL。
 - 已建立並推送 Git tag `v2-stage-0`，指向 commit `aca8047b64d9da396a424068c21d9c7a585e1a08`。
 
 ### v2 第 1 階段：PostgreSQL 與 Prisma 基礎
@@ -412,8 +412,8 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 #### Vercel 範圍說明
 
 - 本階段只確認本機 production build 成功。
-- 正式環境尚未配置可供 Auth 使用的雲端 PostgreSQL，因此未將 v2 第 2 階段 Production Auth／Database 驗證標記為完成。
-- 雲端 PostgreSQL 供應商決策與正式 Auth 驗證仍留待 v2 第 10 階段，不提前導入任何供應商。
+- v2 第 2 階段完成當時，正式環境尚未配置可供 Auth 使用的雲端 PostgreSQL，因此該階段只完成本機 Auth／Database 驗證。
+- 雲端 PostgreSQL 供應商決策與正式 Auth 驗證當時留待 v2 第 10 階段，並已於第 10 階段以 Neon Production PostgreSQL 完成。
 
 ### v2 第 3 階段：新增與列表
 
@@ -644,6 +644,8 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 
 ### v2 第 10 階段：文件與正式環境驗證
 
+狀態：**已完成**（2026-08-19）。
+
 完成條件：
 
 - README 包含系統說明、安裝、啟動及測試方式。
@@ -653,14 +655,40 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 - 將第二版 MVP 部署至 Vercel 並完成正式環境測試；正式 Environment Variables、雲端 PostgreSQL 與 Production Auth／Database 驗證均在本階段完成。
 - 文件不包含資料庫密碼、Session Secret 或其他機密。
 
+完成結果：
+
+- README 已整理為求職作品文件，包含系統功能、技術棧、安全設計、本機安裝、環境變數、migration、測試、CI／CD 與正式環境部署步驟。
+- `.env.example` 已補充本機與 Vercel Production 的用途說明，仍只包含 placeholder，不含真實 Database password、Better Auth Secret 或正式連線字串。
+- `package.json` 已新增 `db:migrate:deploy`，以 `prisma migrate deploy` 在非互動環境套用既有 migrations；Vercel 仍沿用 `postinstall: prisma generate` 與標準 Production Build。
+- 已透過 Vercel Marketplace 建立 Neon PostgreSQL Production resource，Region 為 Singapore（Southeast），Plan 為 Free，並成功連接 Vercel Project `minghan-personal-data-management`。
+- Neon Auth 未啟用；專案持續使用既有 Better Auth、Database Session 與 Server-side Authorization。
+- Neon Integration 已建立 Production `DATABASE_URL`、`DATABASE_URL_UNPOOLED` 等必要 Database environment variables；Production `BETTER_AUTH_SECRET` 已建立，`BETTER_AUTH_URL` 已設定為 canonical domain。文件與 Git 均未保存任何實際 Secret、password、token 或完整連線字串。
+- 已使用 `npm.cmd run db:migrate:deploy` 對 Neon Production PostgreSQL 套用既有 `20260810110544_init` 與 `20260812070058_add_auth` migrations，並以 `prisma migrate status` 確認 `Database schema is up to date`。
+- Production migration 未使用 `prisma migrate dev`、`prisma db push`、`prisma migrate reset` 或資料刪除操作。
+- Vercel Production redeploy 已成功，Deployment 狀態為 `Ready`，正式網站可正常開啟。
+- Vercel Project Name 已調整為 `minghan-personal-data-management`；canonical production domain 為 `https://minghan-personal-data-management.vercel.app`。
+- 舊網址 `https://personal-data-management.vercel.app` 已設定 `308 Permanent Redirect` 至新 canonical domain，且人工導向驗證通過。
+- 未把 migration 自動綁定至所有 Vercel Preview builds，避免 Preview 誤用 Production Database；Production migration 應在部署前以 migration-compatible connection 明確執行。
+
+正式環境人工驗收：
+
+- 全新 Production 虛構測試帳號註冊成功；Logout 後 Session 失效，並可使用同一組帳密重新 Login。
+- 未登入直接存取 `/records` 會被阻擋並進入既有登入流程。
+- Record Create、Detail／Read、Update 與 Delete 均成功。
+- `/activity` 可看到 CREATE／UPDATE／DELETE AuditLog；Record 刪除後既有 AuditLog 仍保留。
+- A／B 帳號的 Record 列表隔離正常。
+- User A 使用 User B 的 Record Detail URL 時只顯示一般化「找不到這筆紀錄」，無法越權讀取。
+- User A 使用 User B 的 Record Edit URL 時同樣顯示一般化 Not Found，無法越權編輯。
+- 新 canonical production domain 可正常開啟，舊網址的 308 redirect 驗證通過。
+
 ## 11. 目前進度
 
-更新日期：2026-08-18（Asia/Taipei）
+更新日期：2026-08-19（Asia/Taipei）
 
 | 版本 | 狀態 | 說明 |
 | --- | --- | --- |
 | 第一版 v1 | 已完成 | Next.js 骨架、首頁、lint、build、GitHub 首次推送、本機與遠端同步、Vercel Production Deployment 及公開首頁 smoke test 均已完成。 |
-| 第二版 v2 | 開發中 | v2 第 0 階段技術決策與安全邊界、第 1 階段 PostgreSQL 與 Prisma 基礎、第 2 階段 Better Auth 與 Database Session、第 3 階段 Record 新增與列表、第 4 階段 Record 查看、修改與刪除、第 5 階段使用者資料隔離、第 6 階段操作紀錄、第 7 階段輸入驗證與錯誤處理、第 8 階段 UI／UX 與作品展示品質改善、第 9 階段自動化測試與 CI 均已完成；下一步為 v2 第 10 階段文件與正式環境驗證。 |
+| 第二版 v2 | 已完成 | v2 第 0～10 階段均已完成；README、Neon Production PostgreSQL、既有 Prisma migrations、Vercel Production Environment Variables、正式部署、Auth／Database 流程、A／B 資料隔離與網址轉址均已完成驗證。 |
 
 ### 環境檢查紀錄
 
@@ -708,7 +736,7 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 - 公開網址：`https://personal-data-management.vercel.app`
 - 已實際開啟公開網址，首頁 smoke test 通過。
 
-### 第二版 v2 第 0～9 階段 Git 與部署狀態
+### 第二版 v2 第 0～10 階段 Git 與部署狀態
 
 - v2 第 2 階段正式收尾完成後，`main` 與 `origin/main` 同步，並以 annotated tag `v2-stage-2` 標記 Better Auth 與 Database Session 完成狀態。
 - tag `v2-stage-0` 指向 commit `aca8047b64d9da396a424068c21d9c7a585e1a08`，訊息為「完成 v2 第 0 階段技術決策與安全邊界」。
@@ -721,9 +749,9 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 - v2 第 7 階段以 commit `53d736bf6bc1fc5f6eb2878bceb5b61efd76c085` 完成 Git 封版；本機 `main`、`origin/main` 與 GitHub 遠端 `main` 已同步，annotated tag `v2-stage-7` 已建立並推送至遠端，且指向同一個 commit。
 - v2 第 8 階段以 commit `4ccbdce1553b9581507936d4b38819244ec8ffe7` 完成 Git 封版；本機 `main`、`origin/main` 與 GitHub 遠端 `main` 已同步，annotated tag `v2-stage-8` 已建立並推送至遠端，且指向同一個 commit。
 - v2 第 9 階段 implementation commit `45c4789284a681bb4bcc259201934dcffca9684c` 已推送至 GitHub；GitHub Actions push run `32145903590` 的 `CI / Lint, test, and build (push)` 已成功完成，Vercel Deployment 亦為 Successful。docs 收尾 commit `280aacd68958a8305a9041ff6c2b3c3e5c8005aa`（`docs: complete v2 stage 9`）及其 GitHub Actions 均已完成，annotated tag `v2-stage-9` 已建立並推送且指向該 docs commit；tag push CI 亦為 success。
-- Vercel Production 已在加入 `postinstall` 修正後成功完成乾淨建置與部署。
-- 2026-08-12 公開網址再次驗證為 HTTP 200，首頁正常顯示。
-- v2 第 2 階段 production build 已在本機通過；正式環境 Auth 尚未配置雲端 PostgreSQL，因此 Production Auth／Database 流程尚未驗證，保留至 v2 第 10 階段。
+- v2 第 10 階段已完成 Neon Production PostgreSQL、2 個既有 Prisma migrations、Vercel Production Environment Variables 與 Production redeploy；Deployment 狀態為 `Ready`。
+- canonical production domain 為 `https://minghan-personal-data-management.vercel.app`；舊網址 `https://personal-data-management.vercel.app` 以 `308 Permanent Redirect` 導向新網址，人工驗證通過。
+- Production Register、Logout／Login、Protected Route、Record CRUD、AuditLog、A／B 資料隔離及跨帳號 Detail／Edit 一般化 Not Found 均於 2026-08-19 通過使用者人工驗收。
 
 ### 第二版 v2 階段狀態
 
@@ -739,11 +767,11 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 | v2 第 7 階段 | 已完成 | Zod 4.4.3 direct dependency、純 Record Schema、Server-side input／recordId validation、安全錯誤處理與人工繞過 HTML validation 驗收均完成；commit 已推送，annotated tag `v2-stage-7` 已建立並推送。 |
 | v2 第 8 階段 | 已完成 | 全站共用 Layout、Header／Navbar、Footer、繁體中文為主的 UI、首頁作品入口、Auth／Records／Detail／Edit／Activity／狀態頁 presentation 及 Responsive 均完成；自動檢查與使用者人工驗收通過，commit 已推送，annotated tag `v2-stage-8` 已建立並推送。 |
 | v2 第 9 階段 | 已完成 | Vitest 18 個 Record Zod Schema 測試、Playwright Chromium 3 個主要 E2E 流程、PostgreSQL 18 CI service 與 GitHub Actions Workflow 均已完成；implementation、docs 與 tag push CI 均成功，使用者人工驗收通過，annotated tag `v2-stage-9` 已建立並推送且指向 docs 收尾 commit `280aacd68958a8305a9041ff6c2b3c3e5c8005aa`。 |
-| v2 第 10 階段 | 尚未開始／下一步 | 完成 README、雲端 PostgreSQL 與正式環境設定，沿用 Vercel Git Integration 完成正式環境與最終封版驗證。 |
+| v2 第 10 階段 | 已完成 | README、`.env.example`、production migration 指令、Neon Production PostgreSQL、Vercel Environment Variables、2 個既有 migrations、Production redeploy、正式 Auth／Database 與 A／B 資料隔離人工驗收均完成。 |
 
-### 第二版 v2 尚未完成項目
+### 第二版 v2 完成結論
 
-- 雲端 PostgreSQL 供應商仍為待決策；README、正式部署，以及正式環境 Auth／Database 驗證預定於 v2 第 10 階段處理。
+- v2 原定第 0～10 階段工作已全部完成；本計畫範圍內沒有尚未完成的 v2 功能或驗收項目。
 
 ## 12. 重要技術決策紀錄
 
@@ -797,6 +825,9 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 | 2026-08-18 | v2 第 9 階段採 Vitest 與 Playwright 建立自動化測試 | Vitest 直接測試 production Record Zod Schema，18 個案例全部通過；Playwright 僅使用 Chromium，以 3 個主要 E2E 案例涵蓋 Protected Route、Authentication、CRUD、Activity 與 A／B 使用者資料隔離，並使用唯一虛構測試資料。 |
 | 2026-08-18 | GitHub Actions CI 使用臨時 PostgreSQL 18 service | Workflow 在 `push`／`pull_request` 時以 Node.js 24.18.0 執行 Prisma Client generation、validate、`migrate deploy`、lint、Vitest、production build／TypeScript 與 Playwright；CI 使用隔離虛構環境值，不需要 Production Secrets。 |
 | 2026-08-18 | v2 第 9 階段標記為完成 | implementation commit、docs 收尾 commit `280aacd68958a8305a9041ff6c2b3c3e5c8005aa` 與 `v2-stage-9` tag push 的 GitHub Actions 均成功，使用者人工驗收亦已通過；annotated tag 已建立並推送且指向 docs 收尾 commit。GitHub Actions 僅負責 CI，Vercel Git Integration 繼續負責 CD，下一步為第 10 階段文件與正式環境驗證。 |
+| 2026-08-19 | 正式環境採 Neon PostgreSQL | 透過 Vercel Marketplace 建立 Singapore（Southeast）Free Plan Production resource，使用 Neon Integration 提供的 Production Database environment variables；Neon Auth 不啟用，身分驗證仍由 Better Auth 負責。 |
+| 2026-08-19 | Production migration 使用既有 `prisma migrate deploy` 流程 | `db:migrate:deploy` 已將 `20260810110544_init` 與 `20260812070058_add_auth` 套用至 Neon Production，migration status 確認 schema 最新；未使用 `migrate dev`、`db push`、reset 或資料刪除操作。 |
+| 2026-08-19 | v2 第 10 階段與 v2 正式完成 | README、Environment Variables、Neon Production Database、Vercel `Ready` Deployment、新 canonical domain、舊網址 308 redirect，以及 Production Auth／CRUD／AuditLog／A／B 資料隔離人工驗收均完成。 |
 
 ## 13. 測試、啟動與公開網址
 
@@ -814,3 +845,5 @@ npm.cmd run build
 
 - 本機開發網址：`http://localhost:3000`
 - 第一版 v1 公開網址：`https://personal-data-management.vercel.app`
+- 第二版 v2 canonical production 網址：`https://minghan-personal-data-management.vercel.app`
+- 舊網址 `https://personal-data-management.vercel.app` 已以 `308 Permanent Redirect` 導向 v2 canonical production 網址。
