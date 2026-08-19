@@ -22,7 +22,7 @@
 | Web | Next.js 16、React 19、TypeScript、App Router、Server Components、Server Actions |
 | UI | Tailwind CSS 4 |
 | Auth | Better Auth 1.6.27、Email／Password、Database Session |
-| Database | PostgreSQL 18、Prisma 7、`@prisma/adapter-pg` |
+| Database | PostgreSQL 18、Prisma 7.9.1、`@prisma/adapter-pg` |
 | Validation | Zod 4 |
 | Testing | Vitest 4、Playwright 1.62（Chromium） |
 | CI／CD | GitHub Actions CI、Vercel Git Integration CD |
@@ -130,28 +130,28 @@ npm.cmd run test:e2e
 - Vitest：18 個 Record Zod Schema 單元測試。
 - Playwright：3 個 Chromium E2E 流程，涵蓋 Protected Route、Authentication／CRUD／Activity 與 A／B 使用者資料隔離。
 - Playwright 會透過 `webServer` 自動啟動測試用 Next.js server，並使用目前環境的 PostgreSQL；測試只建立唯一命名的虛構帳號與資料。
-- GitHub Actions 在 `push` 與 `pull_request` 使用臨時 PostgreSQL 18 service，執行 Prisma migration、lint、Vitest、production build 與 Playwright。
+- GitHub Actions 在 `push` 與 `pull_request` 使用臨時 PostgreSQL 18 service，產生 Prisma Client、套用既有 migrations，並執行 lint、Vitest、production build 與 Playwright。
 
 ## Vercel 正式環境部署
 
-本專案使用 GitHub Repository 作為版本來源，Vercel Git Integration 負責安裝、Production Build 與 Deployment；GitHub Actions 只負責 CI，不另建重複的 Deployment Pipeline。
+本專案使用 GitHub Repository 作為版本來源，Vercel Git Integration 負責觸發 Production Build 與 Deployment；GitHub Actions 只負責 CI，不另建重複的 Deployment Pipeline。
 
 正式環境已完成下列設定：
 
 - Vercel Project：`minghan-personal-data-management`。
 - PostgreSQL：透過 Vercel Marketplace 建立的 Neon Production resource，Region 為 Singapore（Southeast），Plan 為 Free。
 - Authentication：維持 Better Auth；未啟用 Neon Auth。
-- Production Environment Variables：Neon Integration 已建立 `DATABASE_URL`、`DATABASE_URL_UNPOOLED` 等 Database 連線設定，另設 production 專用 `BETTER_AUTH_SECRET`，並將 `BETTER_AUTH_URL` 設為 `https://minghan-personal-data-management.vercel.app`；Repository 不包含任何實際 Secret 或 Database URL。
+- Production Environment Variables：Neon Integration 已建立 `DATABASE_URL`、`DATABASE_URL_UNPOOLED` 等 Database 連線設定，另設 Production 專用 `BETTER_AUTH_SECRET`，並將 `BETTER_AUTH_URL` 設為 `https://minghan-personal-data-management.vercel.app`；Repository 不包含任何真實 Secret 或 Production Database URL。
 - Production migrations：使用 production database 的 migration-compatible connection 執行 `npm.cmd run db:migrate:deploy`，套用 Repository 既有 migrations，並確認 Database Schema 為最新。
-- Deployment：Vercel Git Integration 已完成 Production redeploy，狀態為 `Ready`。
+- Deployment：Vercel Production redeploy 已完成，狀態為 `Ready`。
 
-日後需要將新的 migration 套用至 Production 時，仍使用 production database 的 direct 或 migration-compatible connection 執行：
+日後需要將新的 migration 套用至 Production 時，仍使用 Production Database 的 migration-compatible connection 執行：
 
 ```powershell
 npm.cmd run db:migrate:deploy
 ```
 
-不要在 Production 使用 `prisma migrate dev`、`prisma db push` 或 `prisma migrate reset`，也不要把 Database URL 寫入 Git 或命令紀錄。
+不要在 Production 使用 `prisma migrate dev`、`prisma db push` 或 `prisma migrate reset`，也不要將 Production Database URL 寫入 Repository、文件或公開 log。
 
 Preview 若需要 Database／Auth，應使用獨立的 Preview database 與 Secret；不要把 Production database 暴露給未受控的 Preview deployment。沒有獨立 Preview database 時，僅將上述變數套用至 Production scope。
 
