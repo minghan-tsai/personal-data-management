@@ -21,7 +21,7 @@
 | --- | --- |
 | Web | Next.js 16、React 19、TypeScript、App Router、Server Components、Server Actions |
 | UI | Tailwind CSS 4 |
-| Auth | Better Auth 1.6、Email／Password、Database Session |
+| Auth | Better Auth 1.6.27、Email／Password、Database Session |
 | Database | PostgreSQL 18、Prisma 7、`@prisma/adapter-pg` |
 | Validation | Zod 4 |
 | Testing | Vitest 4、Playwright 1.62（Chromium） |
@@ -142,10 +142,10 @@ npm.cmd run test:e2e
 - PostgreSQL：透過 Vercel Marketplace 建立的 Neon Production resource，Region 為 Singapore（Southeast），Plan 為 Free。
 - Authentication：維持 Better Auth；未啟用 Neon Auth。
 - Production Environment Variables：Neon Integration 已建立 `DATABASE_URL`、`DATABASE_URL_UNPOOLED` 等 Database 連線設定，另設 production 專用 `BETTER_AUTH_SECRET`，並將 `BETTER_AUTH_URL` 設為 `https://minghan-personal-data-management.vercel.app`；Repository 不包含任何實際 Secret 或 Database URL。
-- Production migrations：使用 `npm.cmd run db:migrate:deploy` 套用 Repository 既有 migrations，並確認 Database Schema 為最新。
+- Production migrations：使用 production database 的 migration-compatible connection 執行 `npm.cmd run db:migrate:deploy`，套用 Repository 既有 migrations，並確認 Database Schema 為最新。
 - Deployment：Vercel Git Integration 已完成 Production redeploy，狀態為 `Ready`。
 
-日後部署新的既有 migration 時，仍使用 production database 的 direct 或 migration-compatible connection 執行：
+日後需要將新的 migration 套用至 Production 時，仍使用 production database 的 direct 或 migration-compatible connection 執行：
 
 ```powershell
 npm.cmd run db:migrate:deploy
