@@ -43,7 +43,7 @@ export function LoginForm() {
   }
 
   return (
-    <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
+    <form className="mt-7 space-y-[1.125rem]" onSubmit={handleSubmit}>
       <div>
         <label className="field-label" htmlFor="email">
           Email
@@ -126,10 +126,10 @@ export function LoginForm() {
       </p>
 
       <Link
-        className="button button-secondary w-full"
+        className="mx-auto flex w-fit rounded text-sm font-semibold text-slate-500 underline-offset-4 transition hover:text-blue-700 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-700"
         href="/"
       >
-        返回首頁
+        ← 返回首頁
       </Link>
     </form>
   );

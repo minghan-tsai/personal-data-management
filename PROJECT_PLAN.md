@@ -574,6 +574,16 @@ v2 第 1 階段的初始 Schema 曾建立 `User.password` 及 `User`、`Record`�
 - Responsive 已確認桌面與約 360px 寬度正常：Header／Navbar、Form、Record Card、Button、首頁及 Footer 均可正常顯示或換行，沒有水平 overflow，且 `document.scrollWidth` 與 viewport 寬度一致；未建立複雜 Hamburger Menu。
 - 本階段未新增 UI Library、動畫框架或其他 dependency；`package.json` 與 lock file未因 UI 改造新增相依套件。
 
+#### 正式展示版本 UI polish（2026-08-20）
+
+- 重新整理首頁 Hero 資訊層級，先說明個人紀錄管理用途，再以獨立短行呈現核心技術。
+- 精簡系統概覽文字與四張核心功能卡片文案，使用途、技術及安全設計更容易快速掃讀。
+- 縮減 Login／Register Card 與欄位間距，維持單一 Primary CTA，並將返回首頁改為低權重文字連結。
+- 使用者本人已完成回歸驗收：帳號註冊、登入與 Record 修改均正常。
+- User A 直接存取 User B 的 Record 詳細頁與 Edit 頁時，系統均無法取得該筆資料；既有 Server-side ownership、Authorization 與 Data Isolation 行為未受 UI polish 影響。
+
+> 本輪僅為正式展示品質微調，未新增功能，未修改 Authentication、Authorization、Session、Server Actions、AuditLog、Zod、Prisma Schema、Migration、Database 或其他核心業務邏輯。
+
 主要新增／修改檔案：
 
 - 新增 `src/components/site-header.tsx`、`src/components/site-footer.tsx`、`src/components/logout-button.tsx`。

@@ -17,7 +17,7 @@ export default async function RegisterPage() {
 
   return (
     <main className="auth-shell">
-      <section className="panel w-full p-7 sm:p-9">
+      <section className="panel w-full p-6 sm:p-8">
         <h1 className="text-3xl font-bold tracking-tight text-slate-950">註冊</h1>
         <p className="mt-3 leading-7 text-slate-600">建立虛構測試帳號，開始使用個人紀錄管理功能。</p>
         <RegisterForm />

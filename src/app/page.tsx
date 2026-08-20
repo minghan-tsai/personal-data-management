@@ -5,19 +5,19 @@ import { getServerSession } from "@/lib/session";
 const features = [
   {
     title: "帳號與 Session",
-    description: "使用 Email 與密碼登入，並由伺服器驗證資料庫 Session。",
+    description: "使用 Email／密碼登入，透過伺服器端 Session 驗證身分。",
   },
   {
     title: "個人紀錄管理",
-    description: "提供新增、查看、修改與刪除紀錄的完整 CRUD 流程。",
+    description: "提供新增、查詢、修改與刪除的完整 CRUD 流程。",
   },
   {
     title: "資料隔離與授權",
-    description: "所有資料操作都以目前登入者身分在伺服器端限制存取範圍。",
+    description: "每位使用者只能存取自己的資料。",
   },
   {
     title: "驗證與操作紀錄",
-    description: "以 Zod 驗證輸入，並保留必要的 CREATE、UPDATE、DELETE 操作紀錄。",
+    description: "使用 Zod 驗證輸入，並保留重要操作紀錄。",
   },
 ];
 
@@ -32,8 +32,10 @@ export default async function Home() {
             <p className="eyebrow">全端作品專案</p>
             <h1 className="page-title max-w-3xl">Personal Data Management System</h1>
             <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
-              一套整合 Authentication、個人紀錄 CRUD、使用者資料隔離、Server-side
-              validation 與操作紀錄的全端管理系統作品。
+              安全管理個人紀錄，提供登入驗證、資料 CRUD、使用者資料隔離與操作紀錄。
+            </p>
+            <p className="mt-4 text-sm font-semibold tracking-wide text-slate-500">
+              Next.js · PostgreSQL · Prisma · Better Auth
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -58,16 +60,18 @@ export default async function Home() {
             <p className="text-xs font-bold tracking-[0.14em] text-slate-500">系統概覽</p>
             <dl className="mt-5 space-y-5">
               <div>
-                <dt className="text-sm font-semibold text-slate-500">應用定位</dt>
-                <dd className="mt-1 font-bold text-slate-900">安全的個人紀錄管理</dd>
+                <dt className="text-sm font-semibold text-slate-500">用途</dt>
+                <dd className="mt-1 font-bold text-slate-900">個人紀錄安全管理</dd>
               </div>
               <div>
                 <dt className="text-sm font-semibold text-slate-500">核心技術</dt>
                 <dd className="mt-1 font-bold text-slate-900">Next.js · PostgreSQL · Prisma</dd>
               </div>
               <div>
-                <dt className="text-sm font-semibold text-slate-500">安全邊界</dt>
-                <dd className="mt-1 font-bold text-slate-900">Server-side Session &amp; Authorization</dd>
+                <dt className="text-sm font-semibold text-slate-500">安全機制</dt>
+                <dd className="mt-1 font-bold text-slate-900">
+                  Session · Authorization · Data Isolation
+                </dd>
               </div>
             </dl>
           </aside>
